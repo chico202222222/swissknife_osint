@@ -1,0 +1,31 @@
+{
+  "name": "suica-opsec-kit",
+  "version": "1.0.0",
+  "description": "Homelab web local para estudos e simulacoes autorizadas de OPSEC.",
+  "main": "server.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "node tools/validate-input.mjs octocat 127.0.0.1 TestPass123!",
+    "validate-input": "node tools/validate-input.mjs",
+    "nginx:cert": "bash deploy/generate-local-cert.sh",
+    "nginx:render": "node deploy/render-nginx-https.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chico202222222/fastapi_test_lab.git"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/chico202222222/fastapi_test_lab/issues"
+  },
+  "homepage": "https://github.com/chico202222222/fastapi_test_lab#readme",
+  "dependencies": {
+    "exiftool-vendored": "^37.2.0",
+    "formidable": "^3.5.4",
+    "zod": "^4.4.3"
+  }
+}

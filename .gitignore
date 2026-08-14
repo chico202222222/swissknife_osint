@@ -1,0 +1,17 @@
+# Python virtual environment
+.venv/
+__pycache__/
+*.py[cod]
+
+# Node.js
+node_modules/
+
+# Local runtime files
+logs/
+deploy/runtime/
+deploy/certs/
+*.log
+
+# Nested local dependency repositories (cloned by users as needed)
+osint/blackbird/
+osint/sherlock/

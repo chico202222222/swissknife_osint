@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <base href="/">
+        <title>FastAPI Numbers</title>
+        <link rel="stylesheet" href="/style.css">
+    </head>
+    <body>
+        <main>
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow" data-i18n="eyebrow">FastAPI demo</p>
+                    <h1 data-i18n="title">Random number board</h1>
+                    <p class="description" data-i18n="description">I am testing how JavaScript can call FastAPI routes and trigger backend functions.</p>
+                </div>
+
+                <div class="actions">
+                    <button type="button" class="language" onclick="setLanguage('en')" aria-label="English" data-help-pt="Muda a interface para ingles." data-help-en="Switches the interface to English.">🇺🇸</button>
+                    <button type="button" class="language" onclick="setLanguage('pt')" aria-label="Portuguese" data-help-pt="Muda a interface para portugues." data-help-en="Switches the interface to Portuguese.">🇧🇷</button>
+                    <button type="button" onclick="fetchData()" data-i18n="refresh" data-help-pt="Busca um novo numero na API local." data-help-en="Fetches a new number from the local API.">Refresh</button>
+                </div>
+            </header>
+
+            <div id="api-error" class="api-error" role="alert" aria-live="polite" hidden>
+                <strong data-i18n="apiErrorTitle">API error</strong>
+                <p id="api-error-message"></p>
+                <small id="api-error-details"></small>
+            </div>
+
+            <section class="numbers-section">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow" data-i18n="numbersLabel">Live result</p>
+                        <h2 data-i18n="numbersTitle">Numbers from GET /</h2>
+                    </div>
+                    <p class="status" data-i18n="status">GET / returns <code>{"message": number}</code></p>
+                </div>
+
+                <div class="numbers">
+                    <div class="colspan">...</div>
+                </div>
+            </section>
+
+            <div class="details-grid">
+                <section class="ip-card">
+                    <p class="eyebrow" data-i18n="ipTitle">Connection info</p>
+                    <div class="ip-grid">
+                        <div>
+                            <span data-i18n="clientIp">Client IP</span>
+                            <strong id="user-ip">...</strong>
+                        </div>
+                        <div>
+                            <span data-i18n="machineIp">Machine IP (Network)</span>
+                            <strong id="machine-ip">...</strong>
+                        </div>
+                        <div>
+                            <span data-i18n="publicIp">Public IP</span>
+                            <strong id="public-ip">...</strong>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <div>
+                        <p class="eyebrow" data-i18n="browserLabel">Browser signal</p>
+                        <p id="browser-result">...</p>
+                    </div>
+
+                    <button type="button" onclick="sendBrowserSignal()" data-i18n="runSignal" data-help-pt="Envia o tipo do sistema detectado para a API." data-help-en="Sends the detected system type to the API.">Run signal</button>
+                </section>
+            </div>
+
+            <section class="privacy-gate" aria-labelledby="privacy-title">
+                <div>
+                    <p class="eyebrow" data-i18n="privacyGateLabel">Privacy gate</p>
+                    <h2 id="privacy-title" data-i18n="privacyTitle">Politica de privacidade</h2>
+                    <p class="privacy-summary" data-i18n="privacySummary">Antes de digitar, leia como os dados sao usados nesta demo.</p>
+                </div>
+                <div class="privacy-actions">
+                    <button type="button" onclick="openPrivacyGuide()" data-i18n="openPrivacyGuide" data-help-pt="Mostra como cada ferramenta trata seus dados." data-help-en="Shows how each tool handles your data.">Abrir guia de privacidade</button>
+                    <button id="privacy-accept-button" type="button" class="secondary-button" onclick="acceptPrivacy()" data-i18n="acceptPrivacy" data-help-pt="Libera os campos protegidos nesta sessao." data-help-en="Unlocks protected fields for this session.">Aceitar politica</button>
+                    <input id="privacy-accept" type="checkbox" hidden>
+                    <p id="privacy-status" class="validation-message invalid" role="status" aria-live="polite" data-i18n="privacyRequired">Aceite a politica de privacidade antes de digitar.</p>
+                </div>
+            </section>
+
+            <div id="privacy-guide" class="privacy-guide" role="dialog" aria-modal="true" aria-labelledby="privacy-guide-title" hidden>
+                <div class="privacy-guide-panel">
+                    <div class="privacy-guide-header">
+                        <div>
+                            <p class="eyebrow" data-i18n="privacyGuideLabel">Data guide</p>
+                            <h2 id="privacy-guide-title" data-i18n="privacyGuideTitle">Guia de privacidade</h2>
+                        </div>
+                        <button type="button" class="icon-button" onclick="closePrivacyGuide()" aria-label="Fechar guia de privacidade" data-help-pt="Fecha o guia sem alterar o aceite." data-help-en="Closes the guide without changing consent.">X</button>
+                    </div>
+                    <div class="privacy-guide-body">
+                        <section>
+                            <h3 data-i18n="privacyGuideUseTitle">O que e usado</h3>
+                            <p data-i18n="privacyGuideUseText">Nomes de usuario, alvos de rede e uma senha de teste sao enviados ao backend FastAPI local apenas ao executar a ferramenta relacionada.</p>
+                        </section>
+                        <section>
+                            <h3 data-i18n="privacyGuideStorageTitle">O que nao e guardado</h3>
+                            <p data-i18n="privacyGuideStorageText">Nomes de usuario, alvos e senhas de teste nao sao salvos pela aplicacao. Resultados aparecem apenas na tela desta sessao.</p>
+                        </section>
+                        <section>
+                            <h3 data-i18n="privacyGuideLocalTitle">Armazenamento local da foto</h3>
+                            <p data-i18n="privacyGuideLocalText">A foto selecionada fica no localStorage deste navegador e e enviada apenas ao servidor local. O arquivo temporario do servidor e apagado depois do ExifTool. Coordenadas GPS, quando presentes, podem revelar o local exato da captura; elas sao exibidas localmente sem requisicoes automaticas ao mapa.</p>
+                        </section>
+                        <section>
+                            <h3 data-i18n="privacyGuideTraceTitle">Rastreabilidade de rede</h3>
+                            <p data-i18n="privacyGuideTraceText">Sherlock e Blackbird consultam servicos externos, e Nmap conecta ao alvo. Esses acessos podem registrar seu IP, horario, usuario pesquisado e origem da conexao.</p>
+                        </section>
+                        <section>
+                            <h3 data-i18n="privacyGuidePermissionTitle">Sua responsabilidade</h3>
+                            <p data-i18n="privacyGuidePermissionText">Use Sherlock, Blackbird e Nmap somente em contas, hosts e redes que voce tem autorizacao para verificar.</p>
+                        </section>
+                        <section>
+                            <h3 data-i18n="privacyGuideWirelessTitle">Diagnostico wireless</h3>
+                            <p data-i18n="privacyGuideWirelessText">A verificacao wireless apenas lista adaptadores locais. A ferramenta VLAN gera um plano sem executar comandos. Ela nao ativa modo monitor, nao captura pacotes e nao altera sua conexao.</p>
+                        </section>
+                    </div>
+                    <div class="privacy-guide-footer">
+                        <button type="button" class="secondary-button" onclick="closePrivacyGuide()" data-i18n="closePrivacyGuide" data-help-pt="Volta ao painel sem aceitar." data-help-en="Returns to the dashboard without accepting.">Voltar</button>
+                        <button type="button" onclick="acceptPrivacy()" data-i18n="acceptPrivacy" data-help-pt="Aceita a politica e libera as ferramentas." data-help-en="Accepts the policy and unlocks the tools.">Aceitar politica</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tools-grid">
+            <section class="sherlock-card">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow" data-i18n="sherlockLabel">Username search</p>
+                        <h2 data-i18n="sherlockTitle">Run Sherlock</h2>
+                    </div>
+                    <p class="status" data-i18n="sherlockDescription">Search public username profiles.</p>
+                </div>
+
+                <form class="sherlock-form" onsubmit="runSherlock(event)">
+                    <label for="sherlock-username" data-i18n="usernameLabel">Username</label>
+                    <div class="sherlock-controls">
+                        <input id="sherlock-username" name="username" type="text" maxlength="50" placeholder="octocat" required disabled oninput="validateInput(this)">
+                        <button type="submit" data-requires-privacy disabled data-i18n="runSherlock" data-help-pt="Pesquisa o usuario em perfis publicos." data-help-en="Searches for the username in public profiles.">Search</button>
+                    </div>
+                    <p id="sherlock-username-validation" class="validation-message invalid" role="status" aria-live="polite" data-i18n="privacyRequired">Accept the privacy policy before typing.</p>
+                </form>
+
+                <div id="sherlock-output" class="sherlock-output" role="log" aria-live="polite" data-i18n="sherlockWaiting">Results will appear here.</div>
+            </section>
+
+            <section class="sherlock-card">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow" data-i18n="nmapLabel">Network scan</p>
+                        <h2 data-i18n="nmapTitle">Run Nmap</h2>
+                    </div>
+                    <p class="status" data-i18n="nmapDescription">Scan the top 100 ports of an authorized target.</p>
+                </div>
+
+                <p class="scan-warning" data-i18n="nmapWarning">ONLY SCAN IF YOU HAVE PERMISSION!</p>
+
+                <form class="sherlock-form" onsubmit="runNmap(event)">
+                    <label for="nmap-target" data-i18n="targetLabel">Target</label>
+                    <div class="sherlock-controls">
+                        <input id="nmap-target" name="target" type="text" maxlength="253" placeholder="127.0.0.1" required disabled oninput="validateInput(this)">
+                        <button type="submit" data-requires-privacy disabled data-i18n="runNmap" data-help-pt="Verifica portas do alvo autorizado." data-help-en="Checks ports on the authorized target.">Scan</button>
+                    </div>
+                    <p id="nmap-target-validation" class="validation-message invalid" role="status" aria-live="polite" data-i18n="privacyRequired">Accept the privacy policy before typing.</p>
+                    <label class="permission-check">
+                        <input id="security-permission" type="checkbox">
+                        <span data-i18n="permissionLabel">I have permission to scan this target.</span>
+                    </label>
+                    <button class="security-button" type="button" onclick="runSecuritySweep()" data-requires-privacy disabled data-i18n="runSecurity" data-help-pt="Executa verificacoes locais agrupadas no alvo." data-help-en="Runs grouped local checks on the target.">Security sweep</button>
+                </form>
+
+                <div id="nmap-output" class="sherlock-output" role="log" aria-live="polite" data-i18n="nmapWaiting">Results will appear here.</div>
+            </section>
+
+            <section class="sherlock-card">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow" data-i18n="blackbirdLabel">Username search</p>
+                        <h2 data-i18n="blackbirdTitle">Run Blackbird</h2>
+                    </div>
+                    <p class="status" data-i18n="blackbirdDescription">Search public username profiles across social platforms.</p>
+                </div>
+
+                <form class="sherlock-form" onsubmit="runBlackbird(event)">
+                    <label for="blackbird-username" data-i18n="usernameLabel">Username</label>
+                    <div class="sherlock-controls">
+                        <input id="blackbird-username" name="username" type="text" maxlength="50" placeholder="octocat" required disabled oninput="validateInput(this)">
+                        <button type="submit" data-requires-privacy disabled data-i18n="runBlackbird" data-help-pt="Pesquisa o usuario em fontes publicas." data-help-en="Searches for the username in public sources.">Search</button>
+                    </div>
+                    <p id="blackbird-username-validation" class="validation-message invalid" role="status" aria-live="polite" data-i18n="privacyRequired">Accept the privacy policy before typing.</p>
+                </form>
+
+                <div id="blackbird-output" class="sherlock-output" role="log" aria-live="polite" data-i18n="blackbirdWaiting">Results will appear here.</div>
+            </section>
+
+            <section class="sherlock-card safe-tool-card">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow" data-i18n="resilienceLabel">Local security check</p>
+                        <h2 data-i18n="resilienceTitle">Password resilience</h2>
+                    </div>
+                    <p class="status" data-i18n="resilienceDescription">Evaluate a test password locally without login attempts.</p>
+                </div>
+
+                <form class="sherlock-form" onsubmit="runPasswordResilience(event)">
+                    <label for="password-audit" data-i18n="testPasswordLabel">Test password</label>
+                    <div class="sherlock-controls">
+                        <input id="password-audit" name="password" type="password" minlength="8" maxlength="128" autocomplete="off" required disabled oninput="validateInput(this)">
+                        <button type="submit" data-requires-privacy disabled data-i18n="runResilience" data-help-pt="Avalia a estrutura da senha sem tentar login." data-help-en="Evaluates password structure without login attempts.">Evaluate</button>
+                    </div>
+                    <p id="password-audit-validation" class="validation-message invalid" role="status" aria-live="polite" data-i18n="privacyRequired">Accept the privacy policy before typing.</p>
+                    <label class="permission-check">
+                        <input id="password-permission" type="checkbox">
+                        <span data-i18n="passwordPermissionLabel">I am authorized to assess this test password.</span>
+                    </label>
+                </form>
+
+                <div id="password-audit-output" class="sherlock-output" role="log" aria-live="polite" data-i18n="resilienceWaiting">The local assessment will appear here.</div>
+            </section>
+
+            <section class="sherlock-card exif-tool-card">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow" data-i18n="exifLabel">Local image metadata</p>
+                        <h2 data-i18n="exifTitle">Run ExifTool</h2>
+                    </div>
+                    <p class="status" data-i18n="exifDescription">Read metadata from an image using the local JavaScript server.</p>
+                </div>
+
+                <form class="sherlock-form" onsubmit="runExifTool(event)">
+                    <label for="exif-image" data-i18n="imageLabel">Image</label>
+                    <div class="file-controls">
+                        <input id="exif-image" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/tiff,image/heic,image/heif" required disabled onchange="storeExifImage(this)">
+                        <button type="submit" data-requires-privacy disabled data-i18n="runExif" data-help-pt="Le metadados e coordenadas GPS da foto local." data-help-en="Reads metadata and GPS coordinates from the local photo.">Read metadata</button>
+                    </div>
+                    <p id="exif-image-validation" class="validation-message invalid" role="status" aria-live="polite" data-i18n="privacyRequired">Accept the privacy policy before selecting an image.</p>
+                </form>
+
+                <div id="exif-output" class="sherlock-output" role="log" aria-live="polite" data-i18n="exifWaiting">ExifTool metadata will appear here.</div>
+            </section>
+
+            <section class="sherlock-card wireless-tool-card">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow" data-i18n="wirelessLabel">Wireless adapter audit</p>
+                        <h2 data-i18n="wirelessTitle">Airmon-ng status</h2>
+                    </div>
+                    <p class="status" data-i18n="wirelessDescription">List local wireless adapters with the safe command for this operating system.</p>
+                </div>
+
+                <button type="button" class="wireless-button" onclick="runWirelessStatus()" data-requires-privacy disabled data-i18n="runWireless" data-help-pt="Lista adaptadores sem alterar a conexao." data-help-en="Lists adapters without changing the connection.">Inspect adapters</button>
+                <div id="wireless-output" class="sherlock-output" role="log" aria-live="polite" data-i18n="wirelessWaiting">Wireless adapter information will appear here.</div>
+
+                <button type="button" class="wireless-button" onclick="viewVlans()" data-requires-privacy disabled data-i18n="viewVlans" data-help-pt="Lista as VLANs configuradas nesta maquina." data-help-en="Lists VLANs configured on this machine.">Ver VLANs</button>
+                <div id="vlan-inventory-output" class="sherlock-output" role="log" aria-live="polite" data-i18n="vlanInventoryWaiting">As VLANs locais aparecerao aqui.</div>
+
+                <form class="sherlock-form" onsubmit="createVlanPlan(event)">
+                    <label for="vlan-interface" data-i18n="vlanInterfaceLabel">Interface local</label>
+                    <input id="vlan-interface" name="interface" type="text" placeholder="wlan0" maxlength="32" required disabled oninput="validateInput(this)">
+                    <p id="vlan-interface-validation" class="validation-message invalid" role="status" aria-live="polite" data-i18n="privacyRequired">Accept the privacy policy before typing.</p>
+
+                    <label for="vlan-id" data-i18n="vlanIdLabel">VLAN ID</label>
+                    <div class="form-row">
+                        <input id="vlan-id" name="vlan_id" type="number" min="1" max="4094" step="1" placeholder="100" required disabled oninput="validateInput(this)">
+                        <button type="submit" data-requires-privacy disabled data-i18n="createVlanPlan" data-help-pt="Gera comandos VLAN em dry-run; nada e executado." data-help-en="Generates VLAN commands in dry-run; nothing is executed.">Gerar plano</button>
+                    </div>
+                    <p id="vlan-id-validation" class="validation-message invalid" role="status" aria-live="polite" data-i18n="privacyRequired">Accept the privacy policy before typing.</p>
+                    <label class="permission-check">
+                        <input id="vlan-permission" type="checkbox" data-requires-privacy disabled>
+                        <span data-i18n="vlanPermissionLabel">Tenho autorizacao para configurar esta interface local.</span>
+                    </label>
+                </form>
+                <div id="vlan-output" class="sherlock-output" role="log" aria-live="polite" data-i18n="vlanWaiting">O plano VLAN aparecera aqui. Nenhum comando sera executado.</div>
+            </section>
+
+            </div>
+
+            <section class="curl-card">
+                <p class="eyebrow" data-i18n="curlTitle">Curl checks</p>
+                <pre><code>curl http://127.0.0.1:8000/ip</code></pre>
+                <pre><code>curl -X POST http://127.0.0.1:8000/browser-action -H 'Content-Type: application/json' -d '{"browser_os":"mac"}'</code></pre>
+                <pre><code>curl -X POST http://127.0.0.1:8000/browser-action -H 'Content-Type: application/json' -d '{"browser_os":"windows"}'</code></pre>
+                <pre><code>curl -X POST http://127.0.0.1:8000/browser-action -H 'Content-Type: application/json' -d '{"browser_os":"linux"}'</code></pre>
+            </section>
+
+        </main>
+        <script type="module" src="/script.js"></script>
+    </body>
+</html>
