@@ -1,11 +1,15 @@
 # suica-opsec-kit
 
-Homelab web local para estudar OPSEC, validar entradas e executar ferramentas de diagnostico em ambientes simulados ou expressamente autorizados. A interface exige a aceitacao da politica de privacidade antes de liberar qualquer campo protegido.
+Homelab web local para estudar OPSEC, validar entradas e executar ferramentas de diagnostico em ambientes simulados ou expressamente autorizados. A interface exige a aceitacao da politica de privacidade antes de liberar qualquer campo protegido. 
+
+# Uso
+
+O uso é livre para todos, porém todos os repositórios e ferramentas usados estão protegidos atrás de suas licenças.
 
 ## Ferramentas
 
 - **Sherlock** e **Blackbird**: pesquisa de nomes de usuario em fontes publicas.
-- **Nmap**: inventario limitado de portas e servicos de um alvo autorizado.
+- **Nmap**: inventario limitado de portas e servicos de um alvo autorizado. -> *IMPORTANTE* Nmap é uma ferramenta rastreável
 - **SQLMap**: template protegido para futuro lab local de injecao SQL; a interface atual nao executa o comando.
 - **Password resilience**: avaliacao local da estrutura de uma senha de teste, sem tentativa de login.
 - **ExifTool**: leitura local de metadados, incluindo latitude, longitude, altitude e URL de mapa quando a foto possui GPS.
@@ -33,7 +37,7 @@ O Node encontra `src/index.html` automaticamente. Tanto `/` quanto `/src/` carre
 
 - Git e curl
 - Python 3.11 ou mais recente, `venv` e `pip`
-- Node.js 20 LTS ou mais recente e npm
+- Node.js 20 LTS ou mais recente e npm (caso queira usar Apache, não recomendo.)
 - Nmap
 - NGINX e OpenSSL para o proxy HTTPS
 - Chromium instalado pelo Playwright para o smoke test
