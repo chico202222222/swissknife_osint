@@ -1,5 +1,10 @@
 -r osint/blackbird/requirements.txt
+# SQLMap is cloned locally into osint/sqlmap by setup_tools.sh.
+# Keep that folder out of git; the tool vendors its own runtime files.
 fastapi>=0.115,<1
+sqlalchemy>=2.0,<3
+python-multipart>=0.0.9,<1
+itsdangerous>=2.2,<3
 playwright>=1.54,<2
 sherlock-project>=0.15,<1
 uvicorn[standard]>=0.34,<1

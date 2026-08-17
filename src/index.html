@@ -4,7 +4,10 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <base href="/">
-        <title>FastAPI Numbers</title>
+        <title>Suíça OPSEC Kit</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="/style.css">
     </head>
     <body>
@@ -17,8 +20,9 @@
                 </div>
 
                 <div class="actions">
-                    <button type="button" class="language" onclick="setLanguage('en')" aria-label="English" data-help-pt="Muda a interface para ingles." data-help-en="Switches the interface to English.">🇺🇸</button>
-                    <button type="button" class="language" onclick="setLanguage('pt')" aria-label="Portuguese" data-help-pt="Muda a interface para portugues." data-help-en="Switches the interface to Portuguese.">🇧🇷</button>
+                    <a class="secondary-button topbar-link" href="/api/backend/login" data-i18n="openLoginPage" data-help-pt="Abre a pagina de login com SQLAlchemy no FastAPI." data-help-en="Opens the FastAPI login page backed by SQLAlchemy.">Login (SQL)</a>
+                    <button type="button" class="language" onclick="setLanguage('en')" aria-label="English" data-help-pt="Muda a interface para ingles." data-help-en="Switches the interface to English.">EN</button>
+                    <button type="button" class="language" onclick="setLanguage('pt')" aria-label="Portuguese" data-help-pt="Muda a interface para portugues." data-help-en="Switches the interface to Portuguese.">PT</button>
                     <button type="button" onclick="fetchData()" data-i18n="refresh" data-help-pt="Busca um novo numero na API local." data-help-en="Fetches a new number from the local API.">Refresh</button>
                 </div>
             </header>
@@ -129,7 +133,8 @@
             </div>
 
             <div class="tools-grid">
-            <section class="sherlock-card">
+            <section class="tool-card sherlock-card">
+                <div class="tool-card-head">
                 <div class="section-heading">
                     <div>
                         <p class="eyebrow" data-i18n="sherlockLabel">Username search</p>
@@ -145,12 +150,45 @@
                         <button type="submit" data-requires-privacy disabled data-i18n="runSherlock" data-help-pt="Pesquisa o usuario em perfis publicos." data-help-en="Searches for the username in public profiles.">Search</button>
                     </div>
                     <p id="sherlock-username-validation" class="validation-message invalid" role="status" aria-live="polite" data-i18n="privacyRequired">Accept the privacy policy before typing.</p>
+                    <label for="sherlock-flags" data-i18n="flagsLabel">Extra flags</label>
+                    <input id="sherlock-flags" class="flags-input" type="text" maxlength="240" placeholder="--site GitHub" disabled oninput="validateInput(this)">
+                    <p id="sherlock-flags-validation" class="validation-message" role="status" aria-live="polite"></p>
+                    <p class="flags-hint" data-i18n="sherlockFlagsHint">Example: --site GitHub (verbose is enabled by default)</p>
                 </form>
+                </div>
 
                 <div id="sherlock-output" class="sherlock-output" role="log" aria-live="polite" data-i18n="sherlockWaiting">Results will appear here.</div>
             </section>
 
-            <section class="sherlock-card">
+            <section class="tool-card sherlock-card">
+                <div class="tool-card-head">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow" data-i18n="blackbirdLabel">Username search</p>
+                        <h2 data-i18n="blackbirdTitle">Run Blackbird</h2>
+                    </div>
+                    <p class="status" data-i18n="blackbirdDescription">Search public username profiles across social platforms.</p>
+                </div>
+
+                <form class="sherlock-form" onsubmit="runBlackbird(event)">
+                    <label for="blackbird-username" data-i18n="usernameLabel">Username</label>
+                    <div class="sherlock-controls">
+                        <input id="blackbird-username" name="username" type="text" maxlength="50" placeholder="octocat" required disabled oninput="validateInput(this)">
+                        <button type="submit" data-requires-privacy disabled data-i18n="runBlackbird" data-help-pt="Pesquisa o usuario em fontes publicas." data-help-en="Searches for the username in public sources.">Search</button>
+                    </div>
+                    <p id="blackbird-username-validation" class="validation-message invalid" role="status" aria-live="polite" data-i18n="privacyRequired">Accept the privacy policy before typing.</p>
+                    <label for="blackbird-flags" data-i18n="flagsLabel">Extra flags</label>
+                    <input id="blackbird-flags" class="flags-input" type="text" maxlength="240" placeholder="--timeout 5" disabled oninput="validateInput(this)">
+                    <p id="blackbird-flags-validation" class="validation-message" role="status" aria-live="polite"></p>
+                    <p class="flags-hint" data-i18n="blackbirdFlagsHint">Example: --timeout 5 (verbose is enabled by default)</p>
+                </form>
+                </div>
+
+                <div id="blackbird-output" class="sherlock-output" role="log" aria-live="polite" data-i18n="blackbirdWaiting">Results will appear here.</div>
+            </section>
+
+            <section class="tool-card sherlock-card">
+                <div class="tool-card-head">
                 <div class="section-heading">
                     <div>
                         <p class="eyebrow" data-i18n="nmapLabel">Network scan</p>
@@ -168,38 +206,98 @@
                         <button type="submit" data-requires-privacy disabled data-i18n="runNmap" data-help-pt="Verifica portas do alvo autorizado." data-help-en="Checks ports on the authorized target.">Scan</button>
                     </div>
                     <p id="nmap-target-validation" class="validation-message invalid" role="status" aria-live="polite" data-i18n="privacyRequired">Accept the privacy policy before typing.</p>
+                    <fieldset class="flag-options">
+                        <legend data-i18n="nmapFlagsLabel">Scan options</legend>
+                        <div id="nmap-flag-chips" class="flag-chips" role="group" aria-label="Nmap scan options"></div>
+                    </fieldset>
+                    <input id="nmap-flags" type="hidden" value="">
+                    <p id="nmap-flags-validation" class="validation-message" role="status" aria-live="polite"></p>
+                    <p class="flags-hint" data-i18n="nmapFlagsHint">Click to toggle options. Verbose (-v) is enabled by default.</p>
                     <label class="permission-check">
                         <input id="security-permission" type="checkbox">
                         <span data-i18n="permissionLabel">I have permission to scan this target.</span>
                     </label>
                     <button class="security-button" type="button" onclick="runSecuritySweep()" data-requires-privacy disabled data-i18n="runSecurity" data-help-pt="Executa verificacoes locais agrupadas no alvo." data-help-en="Runs grouped local checks on the target.">Security sweep</button>
                 </form>
+                </div>
 
                 <div id="nmap-output" class="sherlock-output" role="log" aria-live="polite" data-i18n="nmapWaiting">Results will appear here.</div>
             </section>
 
-            <section class="sherlock-card">
-                <div class="section-heading">
-                    <div>
-                        <p class="eyebrow" data-i18n="blackbirdLabel">Username search</p>
-                        <h2 data-i18n="blackbirdTitle">Run Blackbird</h2>
+            <section class="tool-card sherlock-card tshark-tool-card">
+                <div class="tool-card-head">
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow" data-i18n="tsharkLabel">Packet inspection</p>
+                            <h2 data-i18n="tsharkTitle">Run TShark</h2>
+                        </div>
+                        <p class="status" data-i18n="tsharkDescription">Capture loopback HTTP traffic or TLS handshakes from local lab ports such as NGINX on 8443.</p>
                     </div>
-                    <p class="status" data-i18n="blackbirdDescription">Search public username profiles across social platforms.</p>
+
+                    <p class="scan-warning" data-i18n="tsharkWarning">LOOPBACK ONLY: capture stays on this machine and requires local authorization.</p>
+
+                    <form class="sherlock-form" onsubmit="runTsharkInspect(event)">
+                        <label for="tshark-profile" data-i18n="tsharkProfileLabel">Profile</label>
+                        <select id="tshark-profile" disabled>
+                            <option value="http" data-i18n="tsharkProfileHttp">HTTP packets</option>
+                            <option value="tls" data-i18n="tsharkProfileTls">TLS handshake (NGINX)</option>
+                        </select>
+
+                        <label for="tshark-port" data-i18n="tsharkPortLabel">Local port</label>
+                        <div class="sherlock-controls">
+                            <input id="tshark-port" name="port" type="number" min="1" max="65535" step="1" value="3000" required disabled oninput="validateInput(this)">
+                            <button type="submit" data-requires-privacy disabled data-i18n="runTshark" data-help-pt="Captura pacotes HTTP/TLS no loopback por alguns segundos." data-help-en="Captures HTTP/TLS packets on loopback for a few seconds.">Capture</button>
+                        </div>
+                        <p id="tshark-port-validation" class="validation-message invalid" role="status" aria-live="polite" data-i18n="privacyRequired">Accept the privacy policy before typing.</p>
+                        <label for="tshark-flags" data-i18n="flagsLabel">Extra flags</label>
+                        <input id="tshark-flags" class="flags-input" type="text" maxlength="240" placeholder="-c 20" disabled oninput="validateInput(this)">
+                        <p id="tshark-flags-validation" class="validation-message" role="status" aria-live="polite"></p>
+                        <p class="flags-hint" data-i18n="tsharkFlagsHint">Example: -V -c 20</p>
+                        <label class="permission-check">
+                            <input id="tshark-permission" type="checkbox">
+                            <span data-i18n="tsharkPermissionLabel">I am authorized to capture traffic on this local interface.</span>
+                        </label>
+                    </form>
                 </div>
 
-                <form class="sherlock-form" onsubmit="runBlackbird(event)">
-                    <label for="blackbird-username" data-i18n="usernameLabel">Username</label>
-                    <div class="sherlock-controls">
-                        <input id="blackbird-username" name="username" type="text" maxlength="50" placeholder="octocat" required disabled oninput="validateInput(this)">
-                        <button type="submit" data-requires-privacy disabled data-i18n="runBlackbird" data-help-pt="Pesquisa o usuario em fontes publicas." data-help-en="Searches for the username in public sources.">Search</button>
-                    </div>
-                    <p id="blackbird-username-validation" class="validation-message invalid" role="status" aria-live="polite" data-i18n="privacyRequired">Accept the privacy policy before typing.</p>
-                </form>
-
-                <div id="blackbird-output" class="sherlock-output" role="log" aria-live="polite" data-i18n="blackbirdWaiting">Results will appear here.</div>
+                <div id="tshark-output" class="sherlock-output" role="log" aria-live="polite" data-i18n="tsharkWaiting">Captured packet fields will appear here.</div>
             </section>
 
-            <section class="sherlock-card safe-tool-card">
+            <section class="tool-card sherlock-card dangerous-tool-card">
+                <div class="tool-card-head">
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow" data-i18n="sqlmapLabel">SQL injection lab</p>
+                            <h2 data-i18n="sqlmapTitle">SQLMap template</h2>
+                        </div>
+                        <p class="status" data-i18n="sqlmapDescription">Run SQLMap against an authorized web target with verbose output.</p>
+                    </div>
+
+                    <p class="scan-warning" data-i18n="sqlmapWarning">DANGEROUS TOOL: ONLY USE ON YOUR OWN LOCAL LAB OR WITH EXPLICIT WRITTEN PERMISSION.</p>
+
+                    <form class="sherlock-form" onsubmit="runSqlmap(event)">
+                        <label for="sqlmap-target" data-i18n="targetUrlLabel">Target URL</label>
+                        <div class="sherlock-controls">
+                            <input id="sqlmap-target" name="target" type="url" maxlength="2048" placeholder="http://127.0.0.1:8080/login" required disabled oninput="validateInput(this)">
+                            <button type="submit" data-requires-privacy disabled data-i18n="runSqlmap" data-help-pt="Executa SQLMap com verbosidade no alvo autorizado." data-help-en="Runs SQLMap with verbose output on the authorized target.">Run SQLMap</button>
+                        </div>
+                        <p id="sqlmap-target-validation" class="validation-message invalid" role="status" aria-live="polite" data-i18n="privacyRequired">Accept the privacy policy before typing.</p>
+                        <label for="sqlmap-flags" data-i18n="flagsLabel">Extra flags</label>
+                        <input id="sqlmap-flags" class="flags-input" type="text" maxlength="240" placeholder='--data "username=demo&password=DemoPass123!" -vv' disabled oninput="validateInput(this)">
+                        <p id="sqlmap-flags-validation" class="validation-message" role="status" aria-live="polite"></p>
+                        <p class="flags-hint" data-i18n="sqlmapFlagsHint">Example: -vv --level=2 --risk=1 (-v and --batch are enabled by default)</p>
+                        <label class="permission-check">
+                            <input id="sqlmap-permission" type="checkbox">
+                            <span data-i18n="sqlmapPermissionLabel">I have permission to test this web application with SQLMap.</span>
+                        </label>
+                    </form>
+                </div>
+
+                <div id="sqlmap-output" class="sherlock-output" role="log" aria-live="polite" data-i18n="sqlmapWaiting">SQLMap output will appear here.</div>
+            </section>
+
+            <section class="tool-card sherlock-card safe-tool-card">
+                <div class="tool-card-head">
                 <div class="section-heading">
                     <div>
                         <p class="eyebrow" data-i18n="resilienceLabel">Local security check</p>
@@ -220,11 +318,13 @@
                         <span data-i18n="passwordPermissionLabel">I am authorized to assess this test password.</span>
                     </label>
                 </form>
+                </div>
 
                 <div id="password-audit-output" class="sherlock-output" role="log" aria-live="polite" data-i18n="resilienceWaiting">The local assessment will appear here.</div>
             </section>
 
-            <section class="sherlock-card exif-tool-card">
+            <section class="tool-card sherlock-card exif-tool-card">
+                <div class="tool-card-head">
                 <div class="section-heading">
                     <div>
                         <p class="eyebrow" data-i18n="exifLabel">Local image metadata</p>
@@ -241,11 +341,12 @@
                     </div>
                     <p id="exif-image-validation" class="validation-message invalid" role="status" aria-live="polite" data-i18n="privacyRequired">Accept the privacy policy before selecting an image.</p>
                 </form>
+                </div>
 
                 <div id="exif-output" class="sherlock-output" role="log" aria-live="polite" data-i18n="exifWaiting">ExifTool metadata will appear here.</div>
             </section>
 
-            <section class="sherlock-card wireless-tool-card">
+            <section class="tool-card sherlock-card wireless-tool-card tools-grid-span">
                 <div class="section-heading">
                     <div>
                         <p class="eyebrow" data-i18n="wirelessLabel">Wireless adapter audit</p>

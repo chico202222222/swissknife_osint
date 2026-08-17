@@ -1,0 +1,81 @@
+# Activate local NGINX HTTPS proxy
+# Ativar o NGINX proxy localmente
+
+## Bash
+
+```bash
+cd /Users/franciscomedeiros/fastapi_training
+
+export FRONTEND_PORT=3000
+./run.sh
+```
+
+Second terminal:
+
+```bash
+cd /Users/franciscomedeiros/fastapi_training
+npm run nginx:cert
+npm run nginx:render
+
+nginx -t -c "$PWD/deploy/runtime/nginx-https.conf"
+nginx -c "$PWD/deploy/runtime/nginx-https.conf"
+```
+
+## Zsh
+
+```zsh
+cd /Users/franciscomedeiros/fastapi_training
+
+export FRONTEND_PORT=3000
+./run.sh
+```
+
+Second terminal:
+
+```zsh
+cd /Users/franciscomedeiros/fastapi_training
+npm run nginx:cert
+npm run nginx:render
+
+nginx -t -c "$PWD/deploy/runtime/nginx-https.conf"
+nginx -c "$PWD/deploy/runtime/nginx-https.conf"
+```
+
+## PowerShell
+
+```powershell
+cd /Users/franciscomedeiros/fastapi_training
+
+$env:FRONTEND_PORT = "3000"
+./run.sh
+```
+
+Second terminal:
+
+```powershell
+cd /Users/franciscomedeiros/fastapi_training
+npm run nginx:cert
+npm run nginx:render
+
+nginx -t -c "$($PWD.Path)/deploy/runtime/nginx-https.conf"
+nginx -c "$($PWD.Path)/deploy/runtime/nginx-https.conf"
+```
+
+## Open
+
+```text
+https://localhost:8443
+http://localhost:8080
+```
+
+## Reload
+
+```bash
+nginx -s reload -c "$PWD/deploy/runtime/nginx-https.conf"
+```
+
+## Stop
+
+```bash
+nginx -s stop -c "$PWD/deploy/runtime/nginx-https.conf"
+```

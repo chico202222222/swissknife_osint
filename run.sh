@@ -11,6 +11,7 @@ fi
 
 api_pid=""
 frontend_pid=""
+frontend_port="${FRONTEND_PORT:-3000}"
 
 if curl -fsS "http://127.0.0.1:8000/" >/dev/null 2>&1; then
     echo "FastAPI is already running on http://127.0.0.1:8000"
@@ -26,16 +27,16 @@ else
     fi
 fi
 
-if curl -fsS "http://127.0.0.1:3000/" >/dev/null 2>&1; then
-    echo "Frontend is already running on http://127.0.0.1:3000"
+if curl -fsS "http://127.0.0.1:${frontend_port}/healthz" >/dev/null 2>&1; then
+    echo "Frontend is already running on http://127.0.0.1:${frontend_port}"
 else
-    node server.js &
+    FRONTEND_PORT="$frontend_port" node server.js &
     frontend_pid=$!
     sleep 1
 
     if ! kill -0 "$frontend_pid" 2>/dev/null; then
-        echo "Could not start the frontend on http://127.0.0.1:3000."
-        echo "Check whether another process is using port 3000: lsof -nP -iTCP:3000 -sTCP:LISTEN"
+        echo "Could not start the frontend on http://127.0.0.1:${frontend_port}."
+        echo "Check whether another process is using port ${frontend_port}: lsof -nP -iTCP:${frontend_port} -sTCP:LISTEN"
         exit 1
     fi
 fi
@@ -48,7 +49,7 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 echo "FastAPI: http://127.0.0.1:8000"
-echo "Frontend: http://127.0.0.1:3000"
+echo "Frontend: http://127.0.0.1:${frontend_port}"
 
 if [[ -n "$frontend_pid" ]]; then
     wait "$frontend_pid"

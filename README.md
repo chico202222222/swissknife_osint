@@ -6,6 +6,7 @@ Homelab web local para estudar OPSEC, validar entradas e executar ferramentas de
 
 - **Sherlock** e **Blackbird**: pesquisa de nomes de usuario em fontes publicas.
 - **Nmap**: inventario limitado de portas e servicos de um alvo autorizado.
+- **SQLMap**: template protegido para futuro lab local de injecao SQL; a interface atual nao executa o comando.
 - **Password resilience**: avaliacao local da estrutura de uma senha de teste, sem tentativa de login.
 - **ExifTool**: leitura local de metadados, incluindo latitude, longitude, altitude e URL de mapa quando a foto possui GPS.
 - **Wireless status**: inventario somente-leitura dos adaptadores; usa `airmon-ng` no Linux, `networksetup` no macOS e `netsh` no Windows.
@@ -37,7 +38,7 @@ O Node encontra `src/index.html` automaticamente. Tanto `/` quanto `/src/` carre
 - NGINX e OpenSSL para o proxy HTTPS
 - Chromium instalado pelo Playwright para o smoke test
 
-As dependencias Python estao em `requirements.txt`: FastAPI, Uvicorn, Playwright, Sherlock e dependencias do Blackbird. As dependencias Node estao em `package.json`: Zod, Formidable e `exiftool-vendored`. O executavel ExifTool e fornecido pelo pacote npm, portanto nao precisa de instalacao global.
+As dependencias Python estao em `requirements.txt`: FastAPI, Uvicorn, Playwright, Sherlock e dependencias do Blackbird. O SQLMap fica como clone local em `osint/sqlmap` e nao deve ser versionado no repositorio principal. As dependencias Node estao em `package.json`: Zod, Formidable e `exiftool-vendored`. O executavel ExifTool e fornecido pelo pacote npm, portanto nao precisa de instalacao global.
 
 ### macOS
 
@@ -79,6 +80,7 @@ cd suica-opsec-kit
 mkdir -p osint
 git clone https://github.com/p1ngul1n0/blackbird.git osint/blackbird
 git clone https://github.com/sherlock-project/sherlock.git osint/sherlock
+git clone https://github.com/sqlmapproject/sqlmap.git osint/sqlmap
 
 python3 -m venv .venv
 source .venv/bin/activate
@@ -139,8 +141,8 @@ Em uma implantacao real, configure `SERVER_NAME`, `HTTPS_ORIGIN`, `SSL_CERTIFICA
 - A foto selecionada fica no `localStorage` do navegador e e enviada ao Node local somente ao executar o ExifTool.
 - O upload temporario e apagado do servidor depois da analise.
 - Coordenadas GPS podem revelar o local exato da captura. O app apenas as exibe e gera a URL; nao abre o mapa nem faz geocodificacao automaticamente.
-- Sherlock e Blackbird consultam terceiros, e Nmap conecta ao alvo. Essas atividades podem ser registradas e correlacionadas com seu IP e horario.
-- Use nomes, hosts e redes proprios ou com autorizacao explicita. A confirmacao na interface nao substitui autorizacao legal.
+- Sherlock e Blackbird consultam terceiros, e Nmap conecta ao alvo. SQLMap e uma ferramenta perigosa e deve ficar restrita ao lab local ou a aplicacoes com autorizacao explicita por escrito. Essas atividades podem ser registradas e correlacionadas com seu IP e horario.
+- Use nomes, hosts, aplicacoes e redes proprios ou com autorizacao explicita. A confirmacao na interface nao substitui autorizacao legal.
 - Senhas digitadas no avaliador nao sao usadas em login e nao sao persistidas pela aplicacao.
 
 Para remover a foto persistida depois do teste, limpe os dados locais do site no navegador.
@@ -162,7 +164,7 @@ O smoke test cobre bloqueio pela politica, validacao Zod, password resilience, u
 api/                 backend FastAPI
 deploy/              templates e scripts NGINX/HTTPS
 docs/                documentacao de seguranca
-osint/               copias locais de Sherlock e Blackbird
+osint/               copias locais de Sherlock, Blackbird e SQLMap
 src/                 index.html, CSS e JavaScript do frontend
 tests/               smoke tests Playwright
 tools/               validadores e ferramentas locais

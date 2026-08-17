@@ -4,8 +4,10 @@ const path = require("path");
 const { formidable } = require("formidable");
 const { exiftool } = require("exiftool-vendored");
 
-const port = 3000;
-const ignoredDirectories = new Set([".git", ".venv", "node_modules", "osint", "tools"]);
+const host = process.env.FRONTEND_HOST || "127.0.0.1";
+const port = Number.parseInt(process.env.FRONTEND_PORT || "3000", 10);
+const backendHost = process.env.BACKEND_HOST || "127.0.0.1";
+const backendPort = Number.parseInt(process.env.BACKEND_PORT || "8000", 10);
 
 const contentTypes = {
     ".css": "text/css; charset=utf-8",
@@ -13,32 +15,89 @@ const contentTypes = {
     ".js": "text/javascript; charset=utf-8",
 };
 
-function findFrontendRoot(startDirectory) {
-    const queue = [startDirectory];
-
-    while (queue.length > 0) {
-        const currentDirectory = queue.shift();
-        const entries = fs.readdirSync(currentDirectory, { withFileTypes: true });
-        const hasIndex = entries.some((entry) => entry.isFile() && entry.name === "index.html");
-
-        if (hasIndex) {
-            return currentDirectory;
-        }
-
-        entries.forEach((entry) => {
-            if (!entry.isDirectory() || ignoredDirectories.has(entry.name)) return;
-            queue.push(path.join(currentDirectory, entry.name));
-        });
-    }
-
-    throw new Error("Could not find index.html for the frontend.");
-}
-
-const root = findFrontendRoot(__dirname);
+const root = path.join(__dirname, "src");
 const rootRoutePrefix = `/${path.basename(root)}`;
 const indexPath = path.join(root, "index.html");
 const zodRoot = path.join(__dirname, "node_modules", "zod");
 const allowedImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/tiff", "image/heic", "image/heif"]);
+const BACKEND_PROXY_PATHS = new Set([
+    "/",
+    "/ip",
+    "/browser-action",
+    "/sherlock",
+    "/blackbird",
+    "/nmap",
+    "/security-sweep",
+    "/password-resilience",
+    "/wireless-status",
+    "/vlan-plan",
+    "/vlan-inventory",
+    "/tshark-inspect",
+    "/sqlmap",
+    "/login",
+    "/auth/login",
+    "/auth/login/form",
+    "/auth/register",
+    "/auth/me",
+    "/auth/logout",
+    "/ip_win",
+    "/ip_linux",
+    "/ip_mac",
+]);
+
+function isBackendProxyAllowed(pathname) {
+    return BACKEND_PROXY_PATHS.has(pathname.split("?")[0]);
+}
+
+function readRequestBody(request) {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        request.on("data", (chunk) => chunks.push(chunk));
+        request.on("end", () => resolve(Buffer.concat(chunks)));
+        request.on("error", reject);
+    });
+}
+
+function proxyBackendRequest(request, response, backendPath) {
+    return new Promise(async (resolve) => {
+        const body = request.method === "GET" || request.method === "HEAD"
+            ? undefined
+            : await readRequestBody(request);
+
+        const headers = { ...request.headers, host: `${backendHost}:${backendPort}` };
+        headers["x-forwarded-prefix"] = "/api/backend";
+        delete headers.connection;
+        delete headers["content-length"];
+
+        const proxyRequest = http.request(
+            {
+                hostname: backendHost,
+                port: backendPort,
+                method: request.method,
+                path: backendPath,
+                headers,
+            },
+            (proxyResponse) => {
+                const responseHeaders = { ...proxyResponse.headers };
+                delete responseHeaders["transfer-encoding"];
+                response.writeHead(proxyResponse.statusCode || 502, responseHeaders);
+                proxyResponse.pipe(response);
+                proxyResponse.on("end", resolve);
+            },
+        );
+
+        proxyRequest.on("error", (error) => {
+            sendJson(response, 502, { detail: `Backend unavailable: ${error.message}` });
+            resolve();
+        });
+
+        if (body?.length) {
+            proxyRequest.write(body);
+        }
+
+        proxyRequest.end();
+    });
+}
 
 function sendJson(response, statusCode, body) {
     response.writeHead(statusCode, {
@@ -150,7 +209,7 @@ function getCanonicalPath(pathname) {
     return null;
 }
 
-function sendFile(response, filePath) {
+function sendFile(request, response, filePath) {
     const isFrontendFile = filePath === root || filePath.startsWith(`${root}${path.sep}`);
     const isZodFile = filePath === zodRoot || filePath.startsWith(`${zodRoot}${path.sep}`);
     if (!isFrontendFile && !isZodFile) {
@@ -159,18 +218,34 @@ function sendFile(response, filePath) {
         return;
     }
 
-    fs.readFile(filePath, (error, file) => {
-        if (error) {
-            response.writeHead(error.code === "ENOENT" ? 404 : 500);
-            response.end(error.code === "ENOENT" ? "Not found" : "Server error");
+    fs.stat(filePath, (statError, stats) => {
+        if (statError) {
+            response.writeHead(statError.code === "ENOENT" ? 404 : 500);
+            response.end(statError.code === "ENOENT" ? "Not found" : "Server error");
             return;
         }
 
-        response.writeHead(200, {
-            "Content-Type": contentTypes[path.extname(filePath)] || "application/octet-stream",
-            "X-Content-Type-Options": "nosniff",
+        if (stats.isDirectory()) {
+            response.writeHead(403, { "X-Content-Type-Options": "nosniff" });
+            response.end("Directory browsing is disabled.");
+            return;
+        }
+
+        fs.readFile(filePath, (error, file) => {
+            if (error) {
+                response.writeHead(error.code === "ENOENT" ? 404 : 500);
+                response.end(error.code === "ENOENT" ? "Not found" : "Server error");
+                return;
+            }
+
+            const headers = {
+                "Content-Type": contentTypes[path.extname(filePath)] || "application/octet-stream",
+                "X-Content-Type-Options": "nosniff",
+                "Content-Length": file.length,
+            };
+            response.writeHead(200, headers);
+            response.end(request.method === "HEAD" ? undefined : file);
         });
-        response.end(file);
     });
 }
 
@@ -185,8 +260,37 @@ http.createServer(async (request, response) => {
         return;
     }
 
+    if (pathname === "/api/backend" || pathname.startsWith("/api/backend/")) {
+        const backendPath = pathname.slice("/api/backend".length) || "/";
+        if (!isBackendProxyAllowed(backendPath)) {
+            sendJson(response, 403, { detail: "This backend route is not exposed through the frontend proxy." });
+            return;
+        }
+        await proxyBackendRequest(request, response, backendPath);
+        return;
+    }
+
     if (request.method === "POST" && pathname === "/api/exif") {
         await handleExifUpload(request, response);
+        return;
+    }
+
+    if ((request.method === "GET" || request.method === "HEAD") && pathname === "/healthz") {
+        response.writeHead(200, {
+            "Content-Type": "text/plain; charset=utf-8",
+            "X-Content-Type-Options": "nosniff",
+            "Content-Length": 3,
+        });
+        response.end(request.method === "HEAD" ? undefined : "ok\n");
+        return;
+    }
+
+    if (request.method !== "GET" && request.method !== "HEAD") {
+        response.writeHead(405, {
+            "Allow": "GET, HEAD, POST",
+            "X-Content-Type-Options": "nosniff",
+        });
+        response.end("Method not allowed");
         return;
     }
 
@@ -200,7 +304,7 @@ http.createServer(async (request, response) => {
     if (pathname === "/__vendor/zod" || pathname.startsWith("/__vendor/zod/")) {
         const zodPath = pathname.slice("/__vendor/zod".length) || "/index.js";
         const zodFilePath = path.resolve(zodRoot, `.${zodPath}`);
-        sendFile(response, zodFilePath);
+        sendFile(request, response, zodFilePath);
         return;
     }
 
@@ -208,13 +312,13 @@ http.createServer(async (request, response) => {
     const filePath = path.resolve(root, `.${requestedPath}`);
 
     if (!path.extname(requestedPath) && !fs.existsSync(filePath)) {
-        sendFile(response, indexPath);
+        sendFile(request, response, indexPath);
         return;
     }
 
-    sendFile(response, filePath);
-}).listen(port, "127.0.0.1", () => {
-    console.log(`Frontend: http://127.0.0.1:${port}`);
+    sendFile(request, response, filePath);
+}).listen(port, host, () => {
+    console.log(`Frontend: http://${host}:${port}`);
     console.log(`Serving files from: ${root}`);
     console.log(`Index file: ${indexPath}`);
 });

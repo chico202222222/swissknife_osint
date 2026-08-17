@@ -8,6 +8,7 @@ const locale = {
         numbersLabel: "Live result",
         numbersTitle: "Number from GET /",
         refresh: "Refresh",
+        openLoginPage: "Login (SQL)",
         status: 'GET / returns <code>{"message": number}</code>',
         ipTitle: "Connection info",
         clientIp: "Client IP",
@@ -19,7 +20,7 @@ const locale = {
         browserResult: "Backend ran",
         unknown: "Not found",
         apiErrorTitle: "API error",
-        apiErrorHint: "Check that FastAPI is running on port 8000.",
+        apiErrorHint: "Check that FastAPI is running and reachable through /api/backend.",
         sherlockLabel: "Username search",
         sherlockTitle: "Run Sherlock",
         sherlockDescription: "Search public username profiles.",
@@ -40,6 +41,41 @@ const locale = {
         nmapWaiting: "Results will appear here.",
         permissionLabel: "I have permission to scan this target.",
         runSecurity: "Security sweep",
+        flagsLabel: "Extra flags",
+        flagsOptional: "Optional",
+        nmapFlagsLabel: "Scan options",
+        nmapFlagsHint: "Click to toggle options. Verbose (-v) is enabled by default.",
+        nmapFlagOpen: "Open only",
+        nmapFlagFast: "Fast (-F)",
+        nmapFlagService: "Service versions (-sV)",
+        nmapFlagScripts: "Default scripts (-sC)",
+        nmapFlagOs: "OS detection (-O)",
+        nmapFlagAggressive: "Aggressive (-A)",
+        nmapFlagTimingFast: "Faster timing (-T4)",
+        nmapFlagReason: "Show reason (--reason)",
+        blackbirdFlagsHint: "Example: --timeout 5 (verbose is enabled by default)",
+        sherlockFlagsHint: "Example: --site GitHub (verbose is enabled by default)",
+        tsharkFlagsHint: "Example: -V -c 20",
+        sqlmapLabel: "SQL injection lab",
+        sqlmapTitle: "Run SQLMap",
+        sqlmapDescription: "Run SQLMap against an authorized web target with verbose output.",
+        targetUrlLabel: "Target URL",
+        runSqlmap: "Run SQLMap",
+        sqlmapWarning: "DANGEROUS TOOL: ONLY USE ON YOUR OWN LOCAL LAB OR WITH EXPLICIT WRITTEN PERMISSION.",
+        sqlmapPermissionLabel: "I have permission to test this web application with SQLMap.",
+        sqlmapWaiting: "SQLMap output will appear here.",
+        sqlmapFlagsHint: "Example: --data \"username=demo&password=DemoPass123!\" -vv --level=2",
+        tsharkLabel: "Packet inspection",
+        tsharkTitle: "Run TShark",
+        tsharkDescription: "Capture loopback HTTP traffic or TLS handshakes from local lab ports such as NGINX on 8443.",
+        tsharkProfileLabel: "Profile",
+        tsharkProfileHttp: "HTTP packets",
+        tsharkProfileTls: "TLS handshake (NGINX)",
+        tsharkPortLabel: "Local port",
+        runTshark: "Capture",
+        tsharkWarning: "LOOPBACK ONLY: capture stays on this machine and requires local authorization.",
+        tsharkPermissionLabel: "I am authorized to capture traffic on this local interface.",
+        tsharkWaiting: "Captured packet fields will appear here.",
         resilienceLabel: "Local security check",
         resilienceTitle: "Password resilience",
         resilienceDescription: "Evaluate a test password locally without login attempts.",
@@ -81,15 +117,15 @@ const locale = {
         privacyGuideLabel: "Data guide",
         privacyGuideTitle: "Privacy guide",
         privacyGuideUseTitle: "What is used",
-        privacyGuideUseText: "Usernames, network targets and a test password are sent to the local FastAPI backend only when you run the related tool.",
+        privacyGuideUseText: "Usernames, network targets, target URLs, packet captures and a test password are sent to the local FastAPI backend only when you run the related tool. SQLMap runs locally with verbose output when you confirm authorization.",
         privacyGuideStorageTitle: "What is not stored",
         privacyGuideStorageText: "Usernames, targets and test passwords are not saved by the application. Results appear only on this session screen.",
         privacyGuideLocalTitle: "Local photo storage",
         privacyGuideLocalText: "The selected photo stays in this browser localStorage and is sent only to the local server. The server temporary file is deleted after ExifTool runs. GPS coordinates, when present, can reveal the exact capture location; they are displayed locally without automatic map requests.",
         privacyGuideTraceTitle: "Network traceability",
-        privacyGuideTraceText: "Sherlock and Blackbird query external services, while Nmap connects to the target. Those systems may record your IP, time, searched username and connection source.",
+        privacyGuideTraceText: "Sherlock and Blackbird query external services, Nmap connects to the target, and TShark reads loopback traffic from local lab ports. Those systems may record your IP, time, searched username and connection source.",
         privacyGuidePermissionTitle: "Your responsibility",
-        privacyGuidePermissionText: "Use Sherlock, Blackbird and Nmap only on accounts, hosts and networks you are authorized to check.",
+        privacyGuidePermissionText: "Use Sherlock, Blackbird, Nmap and SQLMap only on accounts, hosts and networks you are authorized to check. Use TShark only on loopback lab ports you control.",
         privacyGuideWirelessTitle: "Wireless diagnostics",
         privacyGuideWirelessText: "The wireless check only lists local adapters. The VLAN tool generates a dry-run plan and executes no command. It does not enable monitor mode, capture packets or change your connection.",
         privacyRequired: "Accept the privacy policy before typing.",
@@ -105,6 +141,7 @@ const locale = {
         numbersLabel: "Resultado ao vivo",
         numbersTitle: "Numero da rota GET /",
         refresh: "Atualizar",
+        openLoginPage: "Login (SQL)",
         status: 'GET / retorna <code>{"message": number}</code>',
         ipTitle: "Informacoes da conexao",
         clientIp: "IP do cliente",
@@ -116,7 +153,7 @@ const locale = {
         browserResult: "Backend executou",
         unknown: "Nao encontrado",
         apiErrorTitle: "Erro na API",
-        apiErrorHint: "Confira se o FastAPI esta rodando na porta 8000.",
+        apiErrorHint: "Confira se o FastAPI esta rodando e acessivel via /api/backend.",
         sherlockLabel: "Busca por usuario",
         sherlockTitle: "Executar Sherlock",
         sherlockDescription: "Procure perfis publicos por nome de usuario.",
@@ -137,6 +174,41 @@ const locale = {
         nmapWaiting: "Os resultados aparecerao aqui.",
         permissionLabel: "Tenho permissao para analisar este alvo.",
         runSecurity: "Varredura de seguranca",
+        flagsLabel: "Flags extras",
+        flagsOptional: "Opcional",
+        nmapFlagsLabel: "Opcoes de scan",
+        nmapFlagsHint: "Clique para alternar opcoes. Verbose (-v) ja vem ativado.",
+        nmapFlagOpen: "So portas abertas",
+        nmapFlagFast: "Rapido (-F)",
+        nmapFlagService: "Versoes de servico (-sV)",
+        nmapFlagScripts: "Scripts padrao (-sC)",
+        nmapFlagOs: "Deteccao de SO (-O)",
+        nmapFlagAggressive: "Agressivo (-A)",
+        nmapFlagTimingFast: "Timing mais rapido (-T4)",
+        nmapFlagReason: "Mostrar motivo (--reason)",
+        blackbirdFlagsHint: "Exemplo: --timeout 5 (verbose ativado por padrao)",
+        sherlockFlagsHint: "Exemplo: --site GitHub (verbose ativado por padrao)",
+        tsharkFlagsHint: "Exemplo: -V -c 20",
+        sqlmapLabel: "Lab de injecao SQL",
+        sqlmapTitle: "Executar SQLMap",
+        sqlmapDescription: "Executa SQLMap em um alvo web autorizado com saida verbosa.",
+        targetUrlLabel: "URL alvo",
+        runSqlmap: "Executar SQLMap",
+        sqlmapWarning: "FERRAMENTA PERIGOSA: USE SOMENTE NO SEU LAB LOCAL OU COM PERMISSAO EXPLICITA POR ESCRITO.",
+        sqlmapPermissionLabel: "Tenho permissao para testar esta aplicacao web com SQLMap.",
+        sqlmapWaiting: "A saida do SQLMap aparecera aqui.",
+        sqlmapFlagsHint: "Exemplo: --data \"username=demo&password=DemoPass123!\" -vv --level=2",
+        tsharkLabel: "Inspecao de pacotes",
+        tsharkTitle: "Executar TShark",
+        tsharkDescription: "Capture trafego HTTP ou handshakes TLS no loopback, incluindo NGINX na porta 8443.",
+        tsharkProfileLabel: "Perfil",
+        tsharkProfileHttp: "Pacotes HTTP",
+        tsharkProfileTls: "Handshake TLS (NGINX)",
+        tsharkPortLabel: "Porta local",
+        runTshark: "Capturar",
+        tsharkWarning: "SOMENTE LOOPBACK: a captura fica nesta maquina e exige autorizacao local.",
+        tsharkPermissionLabel: "Tenho autorizacao para capturar trafego nesta interface local.",
+        tsharkWaiting: "Os campos dos pacotes capturados aparecerao aqui.",
         resilienceLabel: "Verificacao local de seguranca",
         resilienceTitle: "Resiliencia de senha",
         resilienceDescription: "Avalie uma senha de teste localmente, sem tentativas de login.",
@@ -178,15 +250,15 @@ const locale = {
         privacyGuideLabel: "Guia de dados",
         privacyGuideTitle: "Guia de privacidade",
         privacyGuideUseTitle: "O que e usado",
-        privacyGuideUseText: "Nomes de usuario, alvos de rede e uma senha de teste sao enviados ao backend FastAPI local apenas ao executar a ferramenta relacionada.",
+        privacyGuideUseText: "Nomes de usuario, alvos de rede, URLs alvo, capturas de pacotes e uma senha de teste sao enviados ao backend FastAPI local apenas ao executar a ferramenta relacionada. O SQLMap roda localmente com saida verbosa quando voce confirma a autorizacao.",
         privacyGuideStorageTitle: "O que nao e guardado",
         privacyGuideStorageText: "Nomes de usuario, alvos e senhas de teste nao sao salvos pela aplicacao. Resultados aparecem apenas na tela desta sessao.",
         privacyGuideLocalTitle: "Armazenamento local da foto",
         privacyGuideLocalText: "A foto selecionada fica no localStorage deste navegador e e enviada apenas ao servidor local. O arquivo temporario do servidor e apagado depois do ExifTool. Coordenadas GPS, quando presentes, podem revelar o local exato da captura; elas sao exibidas localmente sem requisicoes automaticas ao mapa.",
         privacyGuideTraceTitle: "Rastreabilidade de rede",
-        privacyGuideTraceText: "Sherlock e Blackbird consultam servicos externos, e Nmap conecta ao alvo. Esses sistemas podem registrar seu IP, horario, usuario pesquisado e origem da conexao.",
+        privacyGuideTraceText: "Sherlock e Blackbird consultam servicos externos, Nmap conecta ao alvo e o TShark le trafego loopback de portas locais do lab. Esses sistemas podem registrar seu IP, horario, usuario pesquisado e origem da conexao.",
         privacyGuidePermissionTitle: "Sua responsabilidade",
-        privacyGuidePermissionText: "Use Sherlock, Blackbird e Nmap somente em contas, hosts e redes que voce tem autorizacao para verificar.",
+        privacyGuidePermissionText: "Use Sherlock, Blackbird, Nmap e SQLMap somente em contas, hosts e redes que voce tem autorizacao para verificar. Use o TShark apenas em portas loopback do seu lab.",
         privacyGuideWirelessTitle: "Diagnostico wireless",
         privacyGuideWirelessText: "A verificacao wireless apenas lista adaptadores locais. A ferramenta VLAN gera um plano sem executar comandos. Ela nao ativa modo monitor, nao captura pacotes e nao altera sua conexao.",
         privacyRequired: "Aceite a politica de privacidade antes de digitar.",
@@ -198,25 +270,51 @@ const locale = {
 };
 
 let language = "pt";
-const apiUrl = window.location.protocol === "file:"
-    ? "http://127.0.0.1:8000"
-    : window.location.port === "3000"
-        ? `${window.location.protocol}//${window.location.hostname || "127.0.0.1"}:8000`
-        : `${window.location.origin}/api/backend`;
-const protectedInputIds = ["sherlock-username", "nmap-target", "blackbird-username", "password-audit", "exif-image", "vlan-interface", "vlan-id"];
+
+function resolveApiUrl() {
+    if (window.location.protocol === "file:") {
+        return "http://127.0.0.1:8000";
+    }
+
+    return `${window.location.origin}/api/backend`;
+}
+
+const apiUrl = resolveApiUrl();
+const nmapFlagOptions = [
+    { flag: "--open", labelKey: "nmapFlagOpen" },
+    { flag: "-F", labelKey: "nmapFlagFast" },
+    { flag: "-sV", labelKey: "nmapFlagService" },
+    { flag: "-sC", labelKey: "nmapFlagScripts" },
+    { flag: "-O", labelKey: "nmapFlagOs" },
+    { flag: "-A", labelKey: "nmapFlagAggressive" },
+    { flag: "-T4", labelKey: "nmapFlagTimingFast" },
+    { flag: "--reason", labelKey: "nmapFlagReason" },
+];
+// Lab port allowlist — re-enable when done testing other local services (e.g. local AI uvicorn):
+// const allowedTsharkPorts = [3000, 8000, 8080, 8443];
+const optionalFlagPattern = /^(?!.*[\r\n;|`$()<>])[\s\S]+$/;
+const protectedInputIds = ["sherlock-username", "sherlock-flags", "nmap-target", "sqlmap-target", "sqlmap-flags", "blackbird-username", "blackbird-flags", "password-audit", "exif-image", "vlan-interface", "vlan-id", "tshark-port", "tshark-flags"];
 const allowedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/tiff", "image/heic", "image/heif"];
 const maxImageSize = 2 * 1024 * 1024;
 const exifStorageKey = "localExifImage";
 const validationSchemas = {
     "sherlock-username": z.string().trim().regex(/^[A-Za-z0-9_.-]{1,50}$/),
+    "sherlock-flags": z.string().max(240).refine((value) => value === "" || optionalFlagPattern.test(value.trim())),
     "nmap-target": z.string().trim().regex(/^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,252}$/),
+    "nmap-flags": z.string().max(240).refine((value) => value === "" || optionalFlagPattern.test(value.trim())),
+    "sqlmap-target": z.string().trim().url().regex(/^https?:\/\//),
+    "sqlmap-flags": z.string().max(240).refine((value) => value === "" || optionalFlagPattern.test(value.trim())),
     "blackbird-username": z.string().trim().regex(/^[A-Za-z0-9_.-]{1,50}$/),
+    "blackbird-flags": z.string().max(240).refine((value) => value === "" || optionalFlagPattern.test(value.trim())),
     "password-audit": z.string().min(8).max(128),
     "exif-image": z.instanceof(File)
         .refine((file) => allowedImageTypes.includes(file.type))
         .refine((file) => file.size <= maxImageSize),
     "vlan-interface": z.string().trim().regex(/^[A-Za-z0-9_.:-]{1,32}$/),
     "vlan-id": z.coerce.number().int().min(1).max(4094),
+    // "tshark-port": z.coerce.number().int().refine((port) => allowedTsharkPorts.includes(port)),
+    "tshark-port": z.coerce.number().int().min(1).max(65535),
+    "tshark-flags": z.string().max(240).refine((value) => value === "" || optionalFlagPattern.test(value.trim())),
 };
 let lastFocusedElement = null;
 
@@ -228,7 +326,7 @@ function apiFetch(path, options = {}) {
 }
 
 function hasAcceptedPrivacy() {
-    return document.querySelector("#privacy-accept").checked;
+    return document.querySelector("#privacy-accept")?.checked || false;
 }
 
 function setValidationMessage(input, message, isValid) {
@@ -251,6 +349,10 @@ function validateInput(input) {
             : input.value.trim();
 
     if (!value) {
+        if (input.id.endsWith("-flags")) {
+            setValidationMessage(input, locale[language].flagsOptional, true);
+            return true;
+        }
         setValidationMessage(input, locale[language].fieldRequired, false);
         return false;
     }
@@ -259,6 +361,48 @@ function validateInput(input) {
     const isValid = schema ? schema.safeParse(value).success : input.checkValidity();
     setValidationMessage(input, isValid ? locale[language].fieldValid : locale[language].fieldInvalid, isValid);
     return isValid;
+}
+
+function syncNmapFlagsInput() {
+    const flagsInput = document.querySelector("#nmap-flags");
+    const chips = document.querySelectorAll("#nmap-flag-chips .flag-chip.selected");
+    if (!flagsInput) return;
+
+    flagsInput.value = [...chips].map((chip) => chip.dataset.flag).join(" ");
+    validateInput(flagsInput);
+}
+
+function renderNmapFlagOptions() {
+    const container = document.querySelector("#nmap-flag-chips");
+    if (!container) return;
+
+    const selected = new Set(
+        [...container.querySelectorAll(".flag-chip.selected")].map((chip) => chip.dataset.flag),
+    );
+    const enabled = hasAcceptedPrivacy();
+
+    container.innerHTML = nmapFlagOptions.map(({ flag, labelKey }) => {
+        const isSelected = selected.has(flag);
+        const label = locale[language][labelKey];
+        return `<button type="button" class="flag-chip${isSelected ? " selected" : ""}" data-flag="${flag}" aria-pressed="${isSelected}"${enabled ? "" : " disabled"}>${label}</button>`;
+    }).join("");
+}
+
+function handleNmapFlagClick(event) {
+    const chip = event.target.closest(".flag-chip");
+    if (!chip || chip.disabled) return;
+
+    chip.classList.toggle("selected");
+    chip.setAttribute("aria-pressed", String(chip.classList.contains("selected")));
+    syncNmapFlagsInput();
+}
+
+function resetNmapFlagOptions() {
+    document.querySelectorAll("#nmap-flag-chips .flag-chip").forEach((chip) => {
+        chip.classList.remove("selected");
+        chip.setAttribute("aria-pressed", "false");
+    });
+    syncNmapFlagsInput();
 }
 
 function updatePrivacyState() {
@@ -274,14 +418,31 @@ function updatePrivacyState() {
 
     protectedInputIds.forEach((id) => {
         const input = document.querySelector(`#${id}`);
+        if (!input) return;
         input.disabled = !accepted;
 
         if (!accepted) {
-            input.value = "";
+            if (id === "tshark-port") {
+                input.value = "3000";
+            } else if (id.endsWith("-flags")) {
+                input.value = "";
+            } else {
+                input.value = "";
+            }
         }
 
         validateInput(input);
     });
+
+    if (!accepted) {
+        resetNmapFlagOptions();
+    }
+    renderNmapFlagOptions();
+
+    const tsharkProfile = document.querySelector("#tshark-profile");
+    if (tsharkProfile) {
+        tsharkProfile.disabled = !accepted;
+    }
 
     document.querySelectorAll("[data-requires-privacy]").forEach((element) => {
         element.disabled = !accepted;
@@ -310,6 +471,82 @@ function acceptPrivacy() {
     document.querySelector("#privacy-accept").checked = true;
     updatePrivacyState();
     closePrivacyGuide();
+}
+
+function runSqlmap(event) {
+    event.preventDefault();
+    const targetInput = document.querySelector("#sqlmap-target");
+    const flagsInput = document.querySelector("#sqlmap-flags");
+    const output = document.querySelector("#sqlmap-output");
+    if (!validateInput(targetInput) || !validateInput(flagsInput)) return;
+    if (!document.querySelector("#sqlmap-permission").checked) {
+        output.textContent = locale[language].authorizationRequired;
+        return;
+    }
+
+    const target = targetInput.value.trim();
+    const flags = flagsInput.value.trim();
+    output.textContent = "Running SQLMap...";
+
+    apiFetch("/sqlmap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            target,
+            flags,
+            accepted_policy: true,
+            authorized: true,
+        }),
+    })
+        .then(async (response) => {
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
+            output.textContent = data.output || "No results returned.";
+            clearApiError();
+        })
+        .catch((error) => {
+            output.textContent = error.message || "SQLMap could not run.";
+            showApiError("POST /sqlmap", error);
+        });
+}
+
+async function runTsharkInspect(event) {
+    event.preventDefault();
+    const portInput = document.querySelector("#tshark-port");
+    const flagsInput = document.querySelector("#tshark-flags");
+    const output = document.querySelector("#tshark-output");
+    if (!validateInput(portInput) || !validateInput(flagsInput)) return;
+    if (!document.querySelector("#tshark-permission").checked) {
+        output.textContent = locale[language].authorizationRequired;
+        return;
+    }
+
+    const profile = document.querySelector("#tshark-profile").value;
+    const port = Number(portInput.value);
+    const flags = flagsInput.value.trim();
+    output.textContent = "Running TShark...";
+
+    try {
+        const response = await apiFetch("/tshark-inspect", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                profile,
+                port,
+                flags,
+                accepted_policy: true,
+                authorized: true,
+            }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
+
+        output.textContent = data.output || "No packets returned.";
+        clearApiError();
+    } catch (error) {
+        output.textContent = error.message;
+        showApiError("POST /tshark-inspect", error);
+    }
 }
 
 function showApiError(route, error) {
@@ -379,7 +616,8 @@ async function sendBrowserSignal() {
 
         const data = await response.json();
         const result = document.querySelector("#browser-result");
-        result.textContent = `${locale[language].browserResult}: ${data.message} (${data.output})`;
+        const detail = data.output ? ` (${data.output})` : "";
+        result.textContent = `${locale[language].browserResult}: ${data.message}${detail}`;
         clearApiError();
     } catch (error) {
         showApiError("POST /browser-action", error);
@@ -389,9 +627,11 @@ async function sendBrowserSignal() {
 async function runSherlock(event) {
     event.preventDefault();
     const usernameInput = document.querySelector("#sherlock-username");
-    if (!validateInput(usernameInput)) return;
+    const flagsInput = document.querySelector("#sherlock-flags");
+    if (!validateInput(usernameInput) || !validateInput(flagsInput)) return;
 
     const username = usernameInput.value.trim();
+    const flags = flagsInput.value.trim();
     const output = document.querySelector("#sherlock-output");
     output.textContent = "Running Sherlock...";
 
@@ -399,7 +639,7 @@ async function runSherlock(event) {
         const response = await apiFetch("/sherlock", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username }),
+            body: JSON.stringify({ username, flags }),
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
@@ -415,9 +655,11 @@ async function runSherlock(event) {
 async function runBlackbird(event) {
     event.preventDefault();
     const usernameInput = document.querySelector("#blackbird-username");
-    if (!validateInput(usernameInput)) return;
+    const flagsInput = document.querySelector("#blackbird-flags");
+    if (!validateInput(usernameInput) || !validateInput(flagsInput)) return;
 
     const username = usernameInput.value.trim();
+    const flags = flagsInput.value.trim();
     const output = document.querySelector("#blackbird-output");
     output.textContent = "Running Blackbird...";
 
@@ -425,7 +667,7 @@ async function runBlackbird(event) {
         const response = await apiFetch("/blackbird", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username }),
+            body: JSON.stringify({ username, flags }),
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
@@ -441,9 +683,11 @@ async function runBlackbird(event) {
 async function runNmap(event) {
     event.preventDefault();
     const targetInput = document.querySelector("#nmap-target");
-    if (!validateInput(targetInput)) return;
+    const flagsInput = document.querySelector("#nmap-flags");
+    if (!validateInput(targetInput) || !validateInput(flagsInput)) return;
 
     const target = targetInput.value.trim();
+    const flags = flagsInput.value.trim();
     const authorized = document.querySelector("#security-permission").checked;
     const output = document.querySelector("#nmap-output");
     output.textContent = "Running Nmap...";
@@ -452,7 +696,7 @@ async function runNmap(event) {
         const response = await apiFetch("/nmap", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ target, authorized }),
+            body: JSON.stringify({ target, authorized, flags }),
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
@@ -467,9 +711,11 @@ async function runNmap(event) {
 
 async function runSecuritySweep() {
     const targetInput = document.querySelector("#nmap-target");
-    if (!validateInput(targetInput)) return;
+    const flagsInput = document.querySelector("#nmap-flags");
+    if (!validateInput(targetInput) || !validateInput(flagsInput)) return;
 
     const target = targetInput.value.trim();
+    const flags = flagsInput.value.trim();
     const authorized = document.querySelector("#security-permission").checked;
     const output = document.querySelector("#nmap-output");
     output.textContent = "Running security sweep...";
@@ -478,7 +724,7 @@ async function runSecuritySweep() {
         const response = await apiFetch("/security-sweep", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ target, authorized }),
+            body: JSON.stringify({ target, authorized, flags }),
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
@@ -707,7 +953,10 @@ function setLanguage(newLanguage) {
 
     document.querySelectorAll("[data-i18n]").forEach((element) => {
         const key = element.dataset.i18n;
-        element.innerHTML = locale[language][key];
+        const translation = locale[language][key];
+        if (translation != null) {
+            element.innerHTML = translation;
+        }
     });
 
     document.querySelectorAll("button[data-help-pt]").forEach((button) => {
@@ -717,6 +966,7 @@ function setLanguage(newLanguage) {
     updatePrivacyState();
     fetchIp();
     sendBrowserSignal();
+    renderNmapFlagOptions();
 }
 
 window.fetchData = fetchData;
@@ -731,6 +981,8 @@ window.runSherlock = runSherlock;
 window.runBlackbird = runBlackbird;
 window.runNmap = runNmap;
 window.runSecuritySweep = runSecuritySweep;
+window.runSqlmap = runSqlmap;
+window.runTsharkInspect = runTsharkInspect;
 window.runPasswordResilience = runPasswordResilience;
 window.storeExifImage = storeExifImage;
 window.runExifTool = runExifTool;
@@ -744,5 +996,6 @@ document.addEventListener("keydown", (event) => {
     }
 });
 
+document.querySelector("#nmap-flag-chips")?.addEventListener("click", handleNmapFlagClick);
 setLanguage(language);
 fetchData();

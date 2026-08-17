@@ -1,9 +1,12 @@
 import json
+import os
 import platform
 import re
+import shlex
 import shutil
 import subprocess
 import sys
+from contextlib import asynccontextmanager
 from uuid import uuid4
 from random import randint
 from pathlib import Path
@@ -12,11 +15,24 @@ from urllib.request import urlopen
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from pydantic import BaseModel
 
-app = FastAPI()
+from .auth import router as auth_router, seed_demo_user
+from .database import init_db
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    init_db()
+    seed_demo_user()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     TrustedHostMiddleware,
@@ -24,8 +40,23 @@ app.add_middleware(
 )
 
 app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.environ.get("SESSION_SECRET", "dev-local-session-key-change-in-prod"),
+    https_only=False,
+    same_site="lax",
+)
+
+app.include_router(auth_router)
+
+app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:3000", "http://localhost:3000"],
+    allow_origins=[
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+        "http://127.0.0.1:3001",
+        "http://localhost:3001",
+    ],
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -58,20 +89,24 @@ class BrowserSignal(BaseModel):
 
 class SherlockRequest(BaseModel):
     username: str
+    flags: str = ""
 
 
 class BlackbirdRequest(BaseModel):
     username: str
+    flags: str = ""
 
 
 class NmapRequest(BaseModel):
     target: str
     authorized: bool = False
+    flags: str = ""
 
 
 class SecuritySweepRequest(BaseModel):
     target: str
     authorized: bool
+    flags: str = ""
 
 
 class PasswordAuditRequest(BaseModel):
@@ -88,6 +123,39 @@ class VlanPlanRequest(BaseModel):
     vlan_id: int
     accepted_policy: bool = False
     authorized: bool = False
+
+
+class TsharkInspectRequest(BaseModel):
+    profile: Literal["http", "tls"]
+    port: int
+    accepted_policy: bool = False
+    authorized: bool = False
+    flags: str = ""
+
+
+class SqlmapRequest(BaseModel):
+    target: str
+    accepted_policy: bool = False
+    authorized: bool = False
+    flags: str = ""
+
+
+# Lab port allowlist — re-enable when done testing other local services (e.g. local AI uvicorn):
+# ALLOWED_TSHARK_PORTS = {3000, 8000, 8080, 8443}
+TSHARK_CAPTURE_SECONDS = 3
+TSHARK_MAX_PACKETS = 40
+MAX_FLAG_LENGTH = 240
+MAX_FLAG_TOKENS = 16
+INVALID_FLAG_TOKEN = re.compile(r"[\r\n\0;|`$()<>]")
+MAX_FLAG_TOKEN_LENGTH = 120
+BLOCKED_FLAGS = {
+    "nmap": {"-i", "-e", "-o", "-oA", "-oN", "-oX", "--datadir", "--resume", "--iflist"},
+    "blackbird": {"--username", "-u", "--help", "-h"},
+    "tshark": {"-i", "-w", "-W", "-F", "-b", "-P"},
+    "sherlock": set(),
+    "sqlmap": set(),
+}
+SQLMAP_TIMEOUT_SECONDS = 300
 
 
 def get_data():
@@ -114,16 +182,44 @@ def get_process_output(result):
     return normalize_process_output(result.stdout) + normalize_process_output(result.stderr)
 
 
+def parse_extra_flags(raw: str, tool: str):
+    flags = raw.strip()
+    if not flags:
+        return []
+
+    if len(flags) > MAX_FLAG_LENGTH:
+        raise HTTPException(status_code=400, detail="Flags are too long.")
+
+    try:
+        tokens = shlex.split(flags)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=f"Invalid flags syntax: {error}") from error
+
+    if len(tokens) > MAX_FLAG_TOKENS:
+        raise HTTPException(status_code=400, detail="Too many flag tokens.")
+
+    blocked = BLOCKED_FLAGS[tool]
+    for token in tokens:
+        if not token or len(token) > MAX_FLAG_TOKEN_LENGTH or INVALID_FLAG_TOKEN.search(token):
+            raise HTTPException(status_code=400, detail=f"Unsupported flag token: {token}")
+        base = token.split("=", 1)[0]
+        if token in blocked or base in blocked:
+            raise HTTPException(status_code=400, detail=f"Flag not allowed for {tool}: {token}")
+
+    return tokens
+
+
 def find_tool(name):
     local_tools = {
         "nmap": PROJECT_ROOT / "tools" / "nmap" / "bin" / "nmap",
         "sherlock": PROJECT_ROOT / ".venv" / "bin" / "sherlock",
         "blackbird": PROJECT_ROOT / "osint" / "blackbird" / "blackbird.py",
+        "sqlmap": PROJECT_ROOT / "osint" / "sqlmap" / "sqlmap.py",
     }
     local_path = local_tools[name]
 
     if local_path.is_file():
-        if name == "blackbird":
+        if name in {"blackbird", "sqlmap"}:
             return [sys.executable, str(local_path)], local_path.parent
         return [str(local_path)], None
 
@@ -314,6 +410,117 @@ def password_resilience(password):
     return {"score": score, "rating": rating, "checks": checks}
 
 
+def get_loopback_interface():
+    return "lo0" if platform.system().lower() == "darwin" else "lo"
+
+
+def trigger_local_traffic(profile, port):
+    curl = shutil.which("curl")
+    if not curl:
+        return
+
+    if profile == "tls":
+        subprocess.Popen(
+            [curl, "-k", "-s", "--max-time", "2", f"https://127.0.0.1:{port}/healthz"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return
+
+    subprocess.Popen(
+        [curl, "-s", "--max-time", "2", f"http://127.0.0.1:{port}/healthz"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
+def run_tshark_inspect(profile, port, extra_flags=None):
+    tshark = shutil.which("tshark")
+    if not tshark:
+        raise HTTPException(status_code=503, detail="tshark is not installed or is not in PATH.")
+
+    interface = get_loopback_interface()
+    display_filter = "http" if profile == "http" else "tls"
+    command = [
+        tshark,
+        "-i",
+        interface,
+        "-f",
+        f"tcp port {port}",
+        "-a",
+        f"duration:{TSHARK_CAPTURE_SECONDS}",
+        "-c",
+        str(TSHARK_MAX_PACKETS),
+        "-Y",
+        display_filter,
+        "-T",
+        "fields",
+        "-E",
+        "header=y",
+        "-E",
+        "separator=|",
+        "-e",
+        "frame.number",
+        "-e",
+        "frame.time_relative",
+        "-e",
+        "ip.src",
+        "-e",
+        "ip.dst",
+        "-e",
+        "tcp.srcport",
+        "-e",
+        "tcp.dstport",
+    ]
+
+    if profile == "http":
+        command.extend(["-e", "http.request.method", "-e", "http.host", "-e", "http.request.uri", "-e", "http.response.code"])
+    else:
+        command.extend(["-e", "tls.handshake.type", "-e", "tls.handshake.extensions_server_name", "-e", "tls.record.version"])
+
+    if extra_flags:
+        command.extend(extra_flags)
+
+    trigger_local_traffic(profile, port)
+
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            timeout=TSHARK_CAPTURE_SECONDS + 10,
+        )
+    except subprocess.TimeoutExpired as error:
+        output = (error.stdout or "") + (error.stderr or "")
+        formatted, rendered = format_command_output(command, output + "\nCapture timed out.", 124)
+        return {
+            "profile": profile,
+            "port": port,
+            "interface": interface,
+            "command": rendered,
+            "output": formatted,
+            "exit_code": 124,
+        }
+
+    output = (result.stdout or "").strip()
+    stderr = (result.stderr or "").strip()
+    if not output and stderr:
+        output = stderr
+
+    body = output or "No packets matched the filter. Confirm the local service is running on this port."
+    formatted, rendered = format_command_output(command, body, result.returncode)
+
+    return {
+        "profile": profile,
+        "port": port,
+        "interface": interface,
+        "command": rendered,
+        "output": formatted,
+        "exit_code": result.returncode,
+        "note": "Loopback-only capture. Use TLS on port 8443 to inspect NGINX HTTPS handshakes.",
+    }
+
+
 @app.get("/")
 def home():
     return {"message": get_data()}
@@ -339,6 +546,12 @@ def browser_action(signal: BrowserSignal):
     }
 
 
+def format_command_output(command, output, exit_code):
+    rendered = " ".join(shlex.quote(part) for part in command)
+    body = output.strip() or "(no output)"
+    return f"$ {rendered}\n\n{body}", rendered
+
+
 @app.post("/sherlock")
 def run_sherlock(request: SherlockRequest):
     username = request.username.strip()
@@ -350,9 +563,12 @@ def run_sherlock(request: SherlockRequest):
     if not command:
         raise HTTPException(status_code=503, detail="Sherlock is not installed or is not in PATH.")
 
+    extra_flags = parse_extra_flags(request.flags, "sherlock")
+    full_command = command + [username, "--print-found", "--timeout", "10", "--no-color", "--verbose"] + extra_flags
+
     try:
         result = subprocess.run(
-            command + [username, "--print-found", "--timeout", "10", "--no-color"],
+            full_command,
             cwd=working_directory,
             capture_output=True,
             text=True,
@@ -360,10 +576,12 @@ def run_sherlock(request: SherlockRequest):
         )
     except subprocess.TimeoutExpired as error:
         output = normalize_process_output(error.stdout) + normalize_process_output(error.stderr)
-        return {"username": username, "output": output + "\nScan timed out after 120 seconds.", "exit_code": 124}
+        formatted, rendered = format_command_output(full_command, output + "\nScan timed out after 120 seconds.", 124)
+        return {"username": username, "command": rendered, "output": formatted, "exit_code": 124}
 
     output = get_process_output(result)
-    return {"username": username, "output": output, "exit_code": result.returncode}
+    formatted, rendered = format_command_output(full_command, output, result.returncode)
+    return {"username": username, "command": rendered, "output": formatted, "exit_code": result.returncode}
 
 
 @app.post("/blackbird")
@@ -377,9 +595,12 @@ def run_blackbird(request: BlackbirdRequest):
     if not command:
         raise HTTPException(status_code=503, detail="Blackbird is not installed or is not in PATH.")
 
+    extra_flags = parse_extra_flags(request.flags, "blackbird")
+    full_command = command + ["--username", username, "--timeout", "3", "--max-concurrent-requests", "60", "--no-nsfw", "--no-update", "-v"] + extra_flags
+
     try:
         result = subprocess.run(
-            command + ["--username", username, "--timeout", "3", "--max-concurrent-requests", "60", "--no-nsfw", "--no-update"],
+            full_command,
             cwd=working_directory,
             capture_output=True,
             text=True,
@@ -387,10 +608,55 @@ def run_blackbird(request: BlackbirdRequest):
         )
     except subprocess.TimeoutExpired as error:
         output = normalize_process_output(error.stdout) + normalize_process_output(error.stderr)
-        return {"username": username, "output": output + "\nScan timed out after 120 seconds.", "exit_code": 124}
+        formatted, rendered = format_command_output(full_command, output + "\nScan timed out after 120 seconds.", 124)
+        return {"username": username, "command": rendered, "output": formatted, "exit_code": 124}
 
     output = get_process_output(result)
-    return {"username": username, "output": output, "exit_code": result.returncode}
+    formatted, rendered = format_command_output(full_command, output, result.returncode)
+    return {"username": username, "command": rendered, "output": formatted, "exit_code": result.returncode}
+
+
+@app.post("/sqlmap")
+def run_sqlmap(request: SqlmapRequest):
+    if not request.accepted_policy:
+        raise HTTPException(status_code=403, detail="Accept the privacy policy before running SQLMap.")
+    if not request.authorized:
+        raise HTTPException(status_code=403, detail="Confirm authorization before running SQLMap.")
+
+    target = request.target.strip()
+    if not re.fullmatch(r"https?://[^\s]+", target):
+        raise HTTPException(status_code=400, detail="Use a valid http or https URL.")
+
+    command, working_directory = find_tool("sqlmap")
+    if not command:
+        raise HTTPException(
+            status_code=503,
+            detail="SQLMap is not installed. Run setup_tools.sh to clone osint/sqlmap.",
+        )
+
+    extra_flags = parse_extra_flags(request.flags, "sqlmap")
+    full_command = command + ["-u", target, "--batch", "-v"] + extra_flags
+
+    try:
+        result = subprocess.run(
+            full_command,
+            cwd=working_directory,
+            capture_output=True,
+            text=True,
+            timeout=SQLMAP_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired as error:
+        output = normalize_process_output(error.stdout) + normalize_process_output(error.stderr)
+        formatted, rendered = format_command_output(
+            full_command,
+            output + f"\nSQLMap timed out after {SQLMAP_TIMEOUT_SECONDS} seconds.",
+            124,
+        )
+        return {"target": target, "command": rendered, "output": formatted, "exit_code": 124}
+
+    output = get_process_output(result)
+    formatted, rendered = format_command_output(full_command, output, result.returncode)
+    return {"target": target, "command": rendered, "output": formatted, "exit_code": result.returncode}
 
 
 @app.post("/password-resilience")
@@ -433,6 +699,22 @@ def vlan_inventory(request: WirelessStatusRequest):
     return get_vlan_inventory()
 
 
+@app.post("/tshark-inspect")
+def tshark_inspect(request: TsharkInspectRequest):
+    if not request.accepted_policy:
+        raise HTTPException(status_code=403, detail="Accept the privacy policy before capturing packets.")
+    if not request.authorized:
+        raise HTTPException(status_code=403, detail="Confirm authorization before capturing local traffic.")
+    # if request.port not in ALLOWED_TSHARK_PORTS:
+    #     raise HTTPException(status_code=400, detail="Use a local lab port: 3000, 8000, 8080 or 8443.")
+    if not (1 <= request.port <= 65535):
+        raise HTTPException(status_code=400, detail="Use a valid TCP port between 1 and 65535.")
+    if request.profile not in {"http", "tls"}:
+        raise HTTPException(status_code=400, detail="Use profile http or tls.")
+
+    return run_tshark_inspect(request.profile, request.port, parse_extra_flags(request.flags, "tshark"))
+
+
 @app.post("/nmap")
 def run_nmap(request: NmapRequest):
     target = request.target.strip()
@@ -446,9 +728,12 @@ def run_nmap(request: NmapRequest):
     if not command:
         raise HTTPException(status_code=503, detail="Nmap is not installed or is not in PATH.")
 
+    extra_flags = parse_extra_flags(request.flags, "nmap")
+    full_command = command + ["-Pn", "-T3", "-v", "--top-ports", "100"] + extra_flags + [target]
+
     try:
         result = subprocess.run(
-            command + ["-Pn", "-T3", "--top-ports", "100", target],
+            full_command,
             cwd=working_directory,
             capture_output=True,
             text=True,
@@ -456,10 +741,12 @@ def run_nmap(request: NmapRequest):
         )
     except subprocess.TimeoutExpired as error:
         output = normalize_process_output(error.stdout) + normalize_process_output(error.stderr)
-        return {"target": target, "output": output + "\nScan timed out after 120 seconds.", "exit_code": 124}
+        formatted, rendered = format_command_output(full_command, output + "\nScan timed out after 120 seconds.", 124)
+        return {"target": target, "command": rendered, "output": formatted, "exit_code": 124}
 
     output = get_process_output(result)
-    return {"target": target, "output": output, "exit_code": result.returncode}
+    formatted, rendered = format_command_output(full_command, output, result.returncode)
+    return {"target": target, "command": rendered, "output": formatted, "exit_code": result.returncode}
 
 
 @app.post("/security-sweep")
@@ -475,9 +762,12 @@ def security_sweep(request: SecuritySweepRequest):
     if not command:
         raise HTTPException(status_code=503, detail="Nmap is not installed or is not in PATH.")
 
+    extra_flags = parse_extra_flags(request.flags, "nmap")
+    full_command = command + ["-Pn", "-T3", "-v", "-sV", "--script", "safe", "--top-ports", "100"] + extra_flags + [target]
+
     try:
         result = subprocess.run(
-            command + ["-Pn", "-T3", "-sV", "--script", "safe", "--top-ports", "100", target],
+            full_command,
             cwd=working_directory,
             capture_output=True,
             text=True,
@@ -485,10 +775,12 @@ def security_sweep(request: SecuritySweepRequest):
         )
     except subprocess.TimeoutExpired as error:
         output = normalize_process_output(error.stdout) + normalize_process_output(error.stderr)
-        return {"target": target, "output": output + "\nSecurity sweep timed out after 120 seconds.", "exit_code": 124}
+        formatted, rendered = format_command_output(full_command, output + "\nSecurity sweep timed out after 120 seconds.", 124)
+        return {"target": target, "command": rendered, "output": formatted, "exit_code": 124}
 
     output = get_process_output(result)
-    return {"target": target, "output": output, "exit_code": result.returncode}
+    formatted, rendered = format_command_output(full_command, output, result.returncode)
+    return {"target": target, "command": rendered, "output": formatted, "exit_code": result.returncode}
 
 
 @app.get("/ip_win")

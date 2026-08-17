@@ -1,8 +1,12 @@
 :root {
     color: #20252b;
     background: #f3f1ec;
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-family: "IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-synthesis: none;
+}
+
+html {
+    background: #f3f1ec;
 }
 
 * {
@@ -12,7 +16,9 @@
 body {
     min-width: 320px;
     margin: 0;
+    color: #20252b;
     background: #f3f1ec;
+    line-height: 1.5;
 }
 
 body.modal-open {
@@ -31,7 +37,7 @@ main {
     justify-content: space-between;
     gap: 32px;
     padding-bottom: 28px;
-    border-bottom: 2px solid #20252b;
+    border-bottom: 1px solid #d8dde2;
 }
 
 .eyebrow {
@@ -53,17 +59,17 @@ p {
 h1 {
     max-width: 720px;
     margin-bottom: 0;
-    font-size: clamp(2.5rem, 7vw, 5.8rem);
+    font-size: clamp(2.3rem, 6vw, 5.2rem);
     font-weight: 700;
-    letter-spacing: -0.065em;
-    line-height: 0.92;
+    letter-spacing: 0;
+    line-height: 0.96;
 }
 
 h2 {
     margin-bottom: 0;
     font-size: clamp(1.35rem, 3vw, 2rem);
-    letter-spacing: -0.035em;
-    line-height: 1;
+    letter-spacing: 0;
+    line-height: 1.08;
 }
 
 .description {
@@ -77,9 +83,10 @@ h2 {
 .api-error {
     margin: 22px 0 0;
     padding: 14px 16px;
-    border-left: 4px solid #b44d2e;
+    border: 1px solid #d8dde2;
+    border-left: 3px solid #b44d2e;
     color: #20252b;
-    background: #f8dfd5;
+    background: #fff;
 }
 
 .api-error strong,
@@ -180,10 +187,13 @@ button:disabled:hover {
 }
 
 .language {
-    width: 42px;
-    padding: 10px 0;
+    min-width: 42px;
+    padding: 10px 12px;
     color: #20252b;
     background: transparent;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
 }
 
 .language:hover {
@@ -192,8 +202,8 @@ button:disabled:hover {
 }
 
 button:focus-visible {
-    outline: 3px solid #b44d2e;
-    outline-offset: 3px;
+    outline: 2px solid #20252b;
+    outline-offset: 2px;
 }
 
 .secondary-button {
@@ -204,6 +214,11 @@ button:focus-visible {
 .secondary-button:hover {
     color: #f3f1ec;
     background: #20252b;
+}
+
+.topbar-link {
+    text-decoration: none;
+    white-space: nowrap;
 }
 
 .icon-button {
@@ -221,6 +236,7 @@ button:focus-visible {
     align-items: flex-end;
     justify-content: space-between;
     gap: 20px;
+    min-height: 88px;
     margin-bottom: 16px;
 }
 
@@ -247,9 +263,9 @@ code {
     min-height: 142px;
     display: grid;
     place-items: center;
-    border-top: 3px solid #20252b;
+    border: 1px solid #d8dde2;
     color: #20252b;
-    background: #fffdf8;
+    background: #fff;
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     font-size: clamp(2.2rem, 6vw, 4.6rem);
     font-weight: 700;
@@ -258,7 +274,8 @@ code {
 
 .tools-grid {
     display: grid;
-    gap: 8px;
+    align-items: stretch;
+    gap: 16px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     margin-bottom: 38px;
 }
@@ -267,9 +284,48 @@ code {
     margin-bottom: 0;
 }
 
-.details-grid {
+.tool-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.tool-card-head {
+    flex: 1 1 auto;
+}
+
+.tool-card .sherlock-form {
+    margin-top: 0;
+}
+
+.tools-grid-span {
+    grid-column: 1 / -1;
+}
+
+.wireless-actions {
     display: grid;
     gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 24px;
+}
+
+.wireless-outputs {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: auto;
+    padding-top: 16px;
+}
+
+.wireless-outputs .sherlock-output {
+    margin-top: 0;
+    min-height: 180px;
+    height: auto;
+}
+
+.details-grid {
+    display: grid;
+    gap: 16px;
     grid-template-columns: 1.45fr 1fr;
     margin-bottom: 38px;
 }
@@ -277,8 +333,8 @@ code {
 .ip-card,
 .panel,
 .curl-card {
-    border-top: 1px solid #20252b;
-    background: rgba(255, 253, 248, 0.72);
+    border: 1px solid #d8dde2;
+    background: #fff;
 }
 
 .privacy-gate {
@@ -286,14 +342,10 @@ code {
     align-items: center;
     gap: 18px;
     grid-template-columns: minmax(0, 1fr) auto;
-    margin-bottom: 8px;
+    margin-bottom: 24px;
     padding: 18px;
-    border: 2px solid #20252b;
-    border-left: 10px solid #116a72;
-    background:
-        linear-gradient(90deg, rgba(17, 106, 114, 0.11), rgba(255, 253, 248, 0) 42%),
-        #fffdf8;
-    box-shadow: 0 8px 0 #d5c03b;
+    border: 1px solid #d8dde2;
+    background: #fff;
 }
 
 .privacy-gate h2 {
@@ -336,10 +388,9 @@ code {
     width: min(720px, 100%);
     max-height: min(720px, calc(100vh - 48px));
     overflow: auto;
-    border: 2px solid #20252b;
-    border-top: 10px solid #116a72;
-    background: #fffdf8;
-    box-shadow: 12px 12px 0 #20252b;
+    border: 1px solid #d8dde2;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(32, 37, 43, 0.12);
 }
 
 .privacy-guide-header,
@@ -369,15 +420,15 @@ code {
 
 .privacy-guide-body section {
     padding: 18px;
-    background: #fffdf8;
+    background: #fff;
 }
 
 .privacy-guide h3 {
     margin: 0 0 8px;
-    color: #116a72;
-    font-size: 0.92rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
+    color: #20252b;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
 }
 
@@ -389,27 +440,32 @@ code {
 }
 
 .sherlock-card {
+    min-width: 0;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
     margin-bottom: 38px;
     padding: 18px;
-    border-top: 1px solid #20252b;
-    background: rgba(255, 253, 248, 0.72);
+    border: 1px solid #d8dde2;
+    background: #fff;
 }
 
-.safe-tool-card {
-    border-left: 4px solid #2f6f4e;
+.sherlock-card > .sherlock-output {
+    flex: 1 1 auto;
+    margin-top: auto;
 }
 
-.exif-tool-card {
-    border-left: 4px solid #116a72;
-}
-
-.wireless-tool-card {
-    border-left: 4px solid #d5c03b;
+.safe-tool-card,
+.exif-tool-card,
+.wireless-tool-card,
+.dangerous-tool-card,
+.tshark-tool-card {
+    border-left: 1px solid #d8dde2;
 }
 
 .wireless-button {
     width: 100%;
-    margin-top: 24px;
+    margin-top: 0;
 }
 
 .file-controls {
@@ -420,10 +476,10 @@ code {
 .file-controls input {
     width: 100%;
     min-width: 0;
-    border: 1px solid #aeb5b9;
+    border: 1px solid #d8dde2;
     padding: 9px;
     color: #20252b;
-    background: #fffdf8;
+    background: #fff;
     font: inherit;
 }
 
@@ -442,18 +498,86 @@ code {
     gap: 8px;
 }
 
+.flags-input,
+#tshark-profile,
 #vlan-interface,
 .form-row input {
     width: 100%;
     min-width: 0;
-    border: 1px solid #aeb5b9;
+    border: 1px solid #d8dde2;
     border-radius: 3px;
     padding: 10px 12px;
     color: #20252b;
-    background: #fffdf8;
+    background: #fff;
     font: inherit;
 }
 
+.flags-hint {
+    margin: 6px 0 0;
+    color: #687078;
+    font-size: 0.78rem;
+    line-height: 1.4;
+}
+
+.flag-options {
+    margin: 16px 0 0;
+    padding: 0;
+    border: 0;
+}
+
+.flag-options legend {
+    display: block;
+    margin-bottom: 8px;
+    color: #687078;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.flag-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.flag-chip {
+    border: 1px solid #d8dde2;
+    border-radius: 3px;
+    padding: 8px 12px;
+    color: #20252b;
+    background: #fff;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.2;
+    cursor: pointer;
+}
+
+.flag-chip:hover:not(:disabled) {
+    border-color: #20252b;
+    background: #f3f1ec;
+}
+
+.flag-chip.selected {
+    color: #fff;
+    border-color: #20252b;
+    background: #20252b;
+}
+
+.flag-chip:disabled {
+    color: #aeb5b9;
+    background: #e7e3da;
+    cursor: not-allowed;
+}
+
+.flag-chip:focus-visible {
+    outline: 2px solid #20252b;
+    outline-offset: 2px;
+}
+
+.flags-input:disabled,
+#tshark-profile:disabled,
 #vlan-interface:disabled,
 .form-row input:disabled {
     color: #687078;
@@ -461,18 +585,22 @@ code {
     cursor: not-allowed;
 }
 
+.flags-input:focus,
+#tshark-profile:focus,
 #vlan-interface:focus,
 .form-row input:focus {
-    outline: 3px solid #e8b9a8;
-    border-color: #b44d2e;
+    outline: 2px solid #20252b;
+    outline-offset: 1px;
+    border-color: #20252b;
 }
 
 .scan-warning {
     margin: 18px 0 0;
-    color: #b44d2e;
+    color: #687078;
     font-size: 0.75rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
 }
 
 .sherlock-form label {
@@ -491,13 +619,14 @@ code {
 }
 
 .sherlock-controls input {
+    width: 100%;
     min-width: 0;
     flex: 1;
-    border: 1px solid #aeb5b9;
+    border: 1px solid #d8dde2;
     border-radius: 3px;
     padding: 10px 12px;
     color: #20252b;
-    background: #fffdf8;
+    background: #fff;
     font: inherit;
 }
 
@@ -508,8 +637,9 @@ code {
 }
 
 .sherlock-controls input:focus {
-    outline: 3px solid #e8b9a8;
-    border-color: #b44d2e;
+    outline: 2px solid #20252b;
+    outline-offset: 1px;
+    border-color: #20252b;
 }
 
 .validation-message {
@@ -537,7 +667,7 @@ code {
 }
 
 .permission-check input {
-    accent-color: #b44d2e;
+    accent-color: #20252b;
 }
 
 .security-button {
@@ -553,15 +683,17 @@ code {
 
 .sherlock-output {
     height: 220px;
+    width: 100%;
     margin-top: 16px;
     padding: 14px;
     overflow: auto;
     border: 1px solid #30383e;
     color: #f3f1ec;
     background: #20252b;
-    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     font-size: 0.78rem;
     line-height: 1.5;
+    overflow-wrap: anywhere;
     white-space: pre-wrap;
 }
 
@@ -630,7 +762,7 @@ code {
     margin: 10px 0 0;
     padding: 12px;
     overflow-x: auto;
-    border-left: 3px solid #b44d2e;
+    border: 1px solid #30383e;
     background: #20252b;
 }
 
@@ -638,6 +770,23 @@ code {
     color: #f3f1ec;
     font-size: 0.78rem;
     white-space: pre;
+}
+
+footer {
+    width: min(1120px, calc(100% - 48px));
+    margin: 0 auto;
+    padding: 0 0 32px;
+    color: #687078;
+    font-size: 0.85rem;
+}
+
+footer p {
+    margin: 0;
+}
+
+footer a {
+    color: #20252b;
+    font-weight: 700;
 }
 
 @media (max-width: 760px) {
@@ -676,6 +825,19 @@ code {
     .details-grid,
     .tools-grid {
         grid-template-columns: 1fr;
+    }
+
+    .tools-grid-span {
+        grid-column: auto;
+    }
+
+    .wireless-actions,
+    .wireless-outputs {
+        grid-template-columns: 1fr;
+    }
+
+    .tools-grid {
+        gap: 12px;
     }
 
     .privacy-gate {

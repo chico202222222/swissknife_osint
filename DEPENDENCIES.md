@@ -11,6 +11,7 @@ mkdir -p osint
 
 git clone https://github.com/p1ngul1n0/blackbird.git osint/blackbird
 git clone https://github.com/sherlock-project/sherlock.git osint/sherlock
+git clone https://github.com/sqlmapproject/sqlmap.git osint/sqlmap *AVISO* nao use sem autorização.
 ```
 
 Se quiser manter a estrutura do projeto sem mostrar esses diretorios em `git status`, o arquivo [.gitignore](.gitignore) ja ignora `osint/blackbird/` e `osint/sherlock/`.
@@ -67,4 +68,4 @@ nginx -t -c "$PWD/deploy/runtime/nginx-https.conf"
 nginx -c "$PWD/deploy/runtime/nginx-https.conf"
 ```
 
-Abra `https://localhost:8443`. O certificado e autoassinado e deve ser aceito apenas para desenvolvimento local. Em producao, defina `SERVER_NAME`, `HTTPS_ORIGIN`, `SSL_CERTIFICATE` e `SSL_CERTIFICATE_KEY` com valores reais antes de renderizar.
+Abra `https://localhost:8443`. O certificado e autoassinado e deve ser aceito apenas para desenvolvimento LOCAL. Em producao, defina `SERVER_NAME`, `HTTPS_ORIGIN`, `SSL_CERTIFICATE` e `SSL_CERTIFICATE_KEY` com valores reais antes de renderizar.

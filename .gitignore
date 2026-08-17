@@ -7,11 +7,15 @@ __pycache__/
 node_modules/
 
 # Local runtime files
+data/
 logs/
+tests/
 deploy/runtime/
 deploy/certs/
 *.log
 
-# Nested local dependency repositories (cloned by users as needed)
-osint/blackbird/
-osint/sherlock/
+# Nested local dependency repositories (cloned or extracted by setup_tools.sh)
+osint/
+
+# Local Nmap binary copied by setup_tools.sh (not a repo; do not commit)
+tools/nmap/bin/

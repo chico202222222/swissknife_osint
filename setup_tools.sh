@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
+echo "Starting"
 project_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$project_dir"
 
@@ -20,6 +20,10 @@ if [[ ! -d "osint/sherlock/sherlock_project" ]]; then
         -o "$temp_dir/sherlock.tar.gz"
     tar -xzf "$temp_dir/sherlock.tar.gz" -C "$temp_dir"
     mv "$temp_dir"/sherlock-0.16.1 osint/sherlock
+fi
+
+if [[ ! -f "osint/sqlmap/sqlmap.py" ]]; then
+    git clone --depth 1 https://github.com/sqlmapproject/sqlmap.git osint/sqlmap
 fi
 
 "$pip_bin" install -e osint/sherlock
@@ -50,3 +54,4 @@ fi
 
 echo "Sherlock ready: .venv/bin/sherlock"
 echo "Nmap ready: tools/nmap/bin/nmap"
+echo "SQLMap ready: osint/sqlmap/sqlmap.py"

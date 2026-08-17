@@ -8,6 +8,7 @@ const runtimeDirectory = path.join(deployDirectory, "runtime");
 const values = {
     PROJECT_DIR: projectDirectory,
     SERVER_NAME: process.env.SERVER_NAME || "localhost",
+    FRONTEND_PORT: process.env.FRONTEND_PORT || "3000",
     HTTP_PORT: process.env.HTTP_PORT || "8080",
     HTTPS_PORT: process.env.HTTPS_PORT || "8443",
     HTTPS_ORIGIN: process.env.HTTPS_ORIGIN || `https://${process.env.SERVER_NAME || "localhost"}:${process.env.HTTPS_PORT || "8443"}`,

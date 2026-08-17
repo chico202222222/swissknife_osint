@@ -1,5 +1,5 @@
 upstream node_frontend {
-    server 127.0.0.1:3000;
+    server 127.0.0.1:${FRONTEND_PORT};
     keepalive 16;
 }
 
