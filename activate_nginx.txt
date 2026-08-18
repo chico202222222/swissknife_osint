@@ -1,81 +1,40 @@
-# Activate local NGINX HTTPS proxy
-# Ativar o NGINX proxy localmente
+# NGINX HTTPS local
 
-## Bash
+Terminal 1 — app:
 
 ```bash
 cd /Users/franciscomedeiros/fastapi_training
-
 export FRONTEND_PORT=3000
 ./run.sh
 ```
 
-Second terminal:
+Terminal 2 — proxy:
 
 ```bash
 cd /Users/franciscomedeiros/fastapi_training
 npm run nginx:cert
 npm run nginx:render
-
 nginx -t -c "$PWD/deploy/runtime/nginx-https.conf"
 nginx -c "$PWD/deploy/runtime/nginx-https.conf"
 ```
 
-## Zsh
-
-```zsh
-cd /Users/franciscomedeiros/fastapi_training
-
-export FRONTEND_PORT=3000
-./run.sh
-```
-
-Second terminal:
-
-```zsh
-cd /Users/franciscomedeiros/fastapi_training
-npm run nginx:cert
-npm run nginx:render
-
-nginx -t -c "$PWD/deploy/runtime/nginx-https.conf"
-nginx -c "$PWD/deploy/runtime/nginx-https.conf"
-```
-
-## PowerShell
+PowerShell (terminal 1):
 
 ```powershell
 cd /Users/franciscomedeiros/fastapi_training
-
 $env:FRONTEND_PORT = "3000"
 ./run.sh
 ```
 
-Second terminal:
+PowerShell (terminal 2): troque `$PWD` por `$($PWD.Path)` nos caminhos do nginx.
 
-```powershell
-cd /Users/franciscomedeiros/fastapi_training
-npm run nginx:cert
-npm run nginx:render
-
-nginx -t -c "$($PWD.Path)/deploy/runtime/nginx-https.conf"
-nginx -c "$($PWD.Path)/deploy/runtime/nginx-https.conf"
-```
-
-## Open
+Abrir:
 
 ```text
 https://localhost:8443
-http://localhost:8080
+http://localhost:8080   # redireciona pro HTTPS
 ```
 
-## Reload
+Reload: `nginx -s reload -c "$PWD/deploy/runtime/nginx-https.conf"`
 
-```bash
-nginx -s reload -c "$PWD/deploy/runtime/nginx-https.conf"
-```
-
-## Stop
-
-```bash
-nginx -s stop -c "$PWD/deploy/runtime/nginx-https.conf"
-```
+Stop: `nginx -s stop -c "$PWD/deploy/runtime/nginx-https.conf"`

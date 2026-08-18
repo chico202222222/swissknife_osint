@@ -17,7 +17,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from .auth import router as auth_router, seed_demo_user
 from .database import init_db
@@ -114,8 +114,25 @@ class PasswordAuditRequest(BaseModel):
     authorized: bool = False
 
 
+VerboseLevel = Literal["off", "summary", "command", "debug"]
+WirelessMode = Literal["inventory", "health_check", "drivers", "networks", "capabilities", "link"]
+
+
 class WirelessStatusRequest(BaseModel):
     accepted_policy: bool = False
+    mode: WirelessMode = "inventory"
+    flags: str = ""
+    verbose: VerboseLevel = "command"
+    interface: str = ""
+
+    @field_validator("verbose", mode="before")
+    @classmethod
+    def coerce_verbose(cls, value):
+        if value is True:
+            return "command"
+        if value is False:
+            return "off"
+        return value
 
 
 class VlanPlanRequest(BaseModel):
@@ -140,6 +157,16 @@ class SqlmapRequest(BaseModel):
     flags: str = ""
 
 
+class CurlRequest(BaseModel):
+    url: str
+    method: Literal["GET", "POST", "HEAD"] = "GET"
+    body: str = ""
+    flags: str = ""
+    verbose: Literal["silent", "normal", "verbose", "trace"] = "normal"
+    accepted_policy: bool = False
+    authorized: bool = False
+
+
 # Lab port allowlist — re-enable when done testing other local services (e.g. local AI uvicorn):
 # ALLOWED_TSHARK_PORTS = {3000, 8000, 8080, 8443}
 TSHARK_CAPTURE_SECONDS = 3
@@ -154,8 +181,11 @@ BLOCKED_FLAGS = {
     "tshark": {"-i", "-w", "-W", "-F", "-b", "-P"},
     "sherlock": set(),
     "sqlmap": set(),
+    "airmon": {"start", "stop", "kill"},
+    "curl": {"-o", "--output", "-K", "--config", "-F", "--form", "-T", "--upload-file", "@"},
 }
 SQLMAP_TIMEOUT_SECONDS = 300
+CURL_TIMEOUT_SECONDS = 30
 
 
 def get_data():
@@ -209,9 +239,30 @@ def parse_extra_flags(raw: str, tool: str):
     return tokens
 
 
+def format_command_output(command, output, exit_code):
+    rendered = " ".join(shlex.quote(part) for part in command)
+    body = output.strip() or "(no output)"
+    return f"$ {rendered}\n\n{body}", rendered
+
+
+def apply_verbose_level(payload, command, body, exit_code, verbose):
+    if verbose == "off":
+        return payload
+    if verbose == "summary":
+        payload["output"] = body
+        return payload
+
+    command_list = command if isinstance(command, list) else [command]
+    formatted, rendered = format_command_output(command_list, body, exit_code)
+    payload["command"] = rendered
+    payload["output"] = formatted if verbose == "command" else f"{formatted}\n\nexit_code: {exit_code}"
+    return payload
+
+
 def find_tool(name):
     local_tools = {
         "nmap": PROJECT_ROOT / "tools" / "nmap" / "bin" / "nmap",
+        "tshark": PROJECT_ROOT / "tools" / "tshark" / "bin" / "tshark",
         "sherlock": PROJECT_ROOT / ".venv" / "bin" / "sherlock",
         "blackbird": PROJECT_ROOT / "osint" / "blackbird" / "blackbird.py",
         "sqlmap": PROJECT_ROOT / "osint" / "sqlmap" / "sqlmap.py",
@@ -258,8 +309,11 @@ def run_browser_function(browser_os):
     return run_command(["uname", "-s"])
 
 
-def get_wireless_status():
+def get_wireless_status(mode="inventory", extra_flags=None, verbose="command", interface=""):
+    extra_flags = extra_flags or []
+    interface = interface.strip()
     system = platform.system().lower()
+    extra_output = []
 
     if system == "linux":
         command = shutil.which("airmon-ng")
@@ -267,46 +321,145 @@ def get_wireless_status():
             return {
                 "platform": "linux",
                 "tool": "airmon-ng",
+                "mode": mode,
                 "available": False,
                 "monitor_mode_supported": True,
                 "output": "airmon-ng was not found. Install the aircrack-ng package.",
             }
-        result = subprocess.run([command], capture_output=True, text=True, timeout=10)
-        return {
+
+        mode_args = {
+            "inventory": [],
+            "health_check": ["check"],
+            "drivers": [],
+            "networks": [],
+            "capabilities": [],
+            "link": [],
+        }
+        if mode not in mode_args:
+            raise HTTPException(status_code=400, detail="Invalid wireless mode.")
+        full_command = [command, *mode_args[mode], *extra_flags]
+        result = subprocess.run(full_command, capture_output=True, text=True, timeout=20)
+        output = get_process_output(result).strip()
+
+        if mode == "drivers" and shutil.which("iw"):
+            iw_command = ["iw", "dev"]
+            iw_result = subprocess.run(iw_command, capture_output=True, text=True, timeout=10)
+            extra_output.append(get_process_output(iw_result).strip())
+
+        if mode == "networks":
+            if shutil.which("nmcli"):
+                nmcli_command = ["nmcli", "-t", "-f", "SSID,SIGNAL,SECURITY", "dev", "wifi", "list"]
+                if interface:
+                    nmcli_command.extend(["ifname", interface])
+                nmcli_result = subprocess.run(nmcli_command, capture_output=True, text=True, timeout=15)
+                extra_output.append(get_process_output(nmcli_result).strip())
+            elif shutil.which("iw"):
+                iw_command = ["iw", "dev"]
+                iw_result = subprocess.run(iw_command, capture_output=True, text=True, timeout=10)
+                extra_output.append(get_process_output(iw_result).strip())
+
+        if mode == "capabilities" and shutil.which("iw"):
+            iw_command = ["iw", "list"]
+            iw_result = subprocess.run(iw_command, capture_output=True, text=True, timeout=15)
+            extra_output.append(get_process_output(iw_result).strip())
+
+        if mode == "link" and shutil.which("iw"):
+            if interface:
+                iw_command = ["iw", "dev", interface, "link"]
+            else:
+                iw_command = ["iw", "dev"]
+            iw_result = subprocess.run(iw_command, capture_output=True, text=True, timeout=10)
+            extra_output.append(get_process_output(iw_result).strip())
+
+        if interface and shutil.which("iwconfig"):
+            iwconfig_command = ["iwconfig", interface]
+            iwconfig_result = subprocess.run(iwconfig_command, capture_output=True, text=True, timeout=10)
+            extra_output.append(get_process_output(iwconfig_result).strip())
+
+        body = output or "(no output)"
+        if extra_output:
+            body = body + "\n\n" + "\n\n".join(part for part in extra_output if part)
+
+        payload = {
             "platform": "linux",
             "tool": "airmon-ng",
+            "mode": mode,
             "available": True,
             "monitor_mode_supported": True,
-            "output": get_process_output(result).strip(),
+            "output": body,
+            "exit_code": result.returncode,
         }
+        return apply_verbose_level(payload, full_command, body, result.returncode, verbose)
 
     if system == "darwin":
         command = shutil.which("networksetup") or "/usr/sbin/networksetup"
-        result = subprocess.run([command, "-listallhardwareports"], capture_output=True, text=True, timeout=10)
-        return {
+        mode_commands = {
+            "inventory": [command, "-listallhardwareports"],
+            "health_check": [command, "-listallnetworkservices"],
+            "drivers": [command, "-listallhardwareports"],
+            "networks": [command, "-listpreferredwirelessnetworks", interface or "Wi-Fi"],
+            "capabilities": [command, "-listallhardwareports"],
+            "link": [command, "-getinfo", interface or "Wi-Fi"],
+        }
+        if mode not in mode_commands:
+            raise HTTPException(status_code=400, detail="Invalid wireless mode.")
+
+        full_command = mode_commands[mode]
+        if mode == "networks" and not interface:
+            full_command = [command, "-listpreferredwirelessnetworks", "Wi-Fi"]
+
+        result = subprocess.run(full_command, capture_output=True, text=True, timeout=20)
+        body = get_process_output(result).strip() or "(no output)"
+
+        if mode == "capabilities":
+            profiler = shutil.which("system_profiler") or "/usr/sbin/system_profiler"
+            profiler_command = [profiler, "SPAirPortDataType"]
+            profiler_result = subprocess.run(profiler_command, capture_output=True, text=True, timeout=25)
+            profiler_output = get_process_output(profiler_result).strip()
+            if profiler_output:
+                body = body + "\n\n" + profiler_output
+
+        payload = {
             "platform": "macos",
             "tool": "networksetup",
+            "mode": mode,
             "available": result.returncode == 0,
             "monitor_mode_supported": False,
-            "output": get_process_output(result).strip(),
+            "output": body,
+            "exit_code": result.returncode,
             "note": "airmon-ng is not provided on macOS; this is a read-only adapter inventory.",
         }
+        return apply_verbose_level(payload, full_command, body, result.returncode, verbose)
 
     if system == "windows":
         command = shutil.which("netsh") or "netsh"
-        result = subprocess.run([command, "wlan", "show", "interfaces"], capture_output=True, text=True, timeout=10)
-        return {
+        mode_commands = {
+            "inventory": [command, "wlan", "show", "interfaces"],
+            "health_check": [command, "wlan", "show", "interfaces"],
+            "drivers": [command, "wlan", "show", "drivers"],
+            "networks": [command, "wlan", "show", "networks"],
+            "capabilities": [command, "wlan", "show", "wirelesscapabilities"],
+            "link": [command, "wlan", "show", "interfaces"],
+        }
+        full_command = mode_commands.get(mode, mode_commands["inventory"])
+        result = subprocess.run(full_command, capture_output=True, text=True, timeout=20)
+        body = get_process_output(result).strip() or "(no output)"
+        payload = {
             "platform": "windows",
             "tool": "netsh wlan",
+            "mode": mode,
             "available": result.returncode == 0,
             "monitor_mode_supported": False,
-            "output": get_process_output(result).strip(),
+            "output": body,
+            "exit_code": result.returncode,
             "note": "airmon-ng is not native to Windows; this is a read-only WLAN inventory.",
         }
+        return apply_verbose_level(payload, full_command, body, result.returncode, verbose)
 
     return {
         "platform": system or "unknown",
         "tool": "none",
+        "mode": mode,
         "available": False,
         "monitor_mode_supported": False,
         "output": "This operating system is not supported.",
@@ -435,14 +588,16 @@ def trigger_local_traffic(profile, port):
 
 
 def run_tshark_inspect(profile, port, extra_flags=None):
-    tshark = shutil.which("tshark")
-    if not tshark:
-        raise HTTPException(status_code=503, detail="tshark is not installed or is not in PATH.")
+    command_base, _ = find_tool("tshark")
+    if not command_base:
+        raise HTTPException(
+            status_code=503,
+            detail="TShark is not installed. Run setup_tools.sh to install it locally.",
+        )
 
     interface = get_loopback_interface()
     display_filter = "http" if profile == "http" else "tls"
-    command = [
-        tshark,
+    command = command_base + [
         "-i",
         interface,
         "-f",
@@ -544,12 +699,6 @@ def browser_action(signal: BrowserSignal):
         "message": f"{signal.browser_os} function executed",
         "output": output,
     }
-
-
-def format_command_output(command, output, exit_code):
-    rendered = " ".join(shlex.quote(part) for part in command)
-    body = output.strip() or "(no output)"
-    return f"$ {rendered}\n\n{body}", rendered
 
 
 @app.post("/sherlock")
@@ -659,6 +808,53 @@ def run_sqlmap(request: SqlmapRequest):
     return {"target": target, "command": rendered, "output": formatted, "exit_code": result.returncode}
 
 
+@app.post("/curl")
+def run_curl(request: CurlRequest):
+    if not request.accepted_policy:
+        raise HTTPException(status_code=403, detail="Accept the privacy policy before running curl.")
+    if not request.authorized:
+        raise HTTPException(status_code=403, detail="Confirm authorization before running curl.")
+
+    url = request.url.strip()
+    if not re.fullmatch(r"https?://[^\s]+", url):
+        raise HTTPException(status_code=400, detail="Use a valid http or https URL.")
+
+    curl = shutil.which("curl")
+    if not curl:
+        raise HTTPException(status_code=503, detail="curl was not found on this system.")
+
+    verbose_flags = {
+        "silent": ["-sS"],
+        "normal": [],
+        "verbose": ["-v"],
+        "trace": ["-vv"],
+    }
+    extra_flags = parse_extra_flags(request.flags, "curl")
+    full_command = [
+        curl,
+        *verbose_flags[request.verbose],
+        "-X",
+        request.method,
+        *extra_flags,
+        "--max-time",
+        "25",
+    ]
+    if request.method == "POST" and request.body.strip():
+        full_command.extend(["-H", "Content-Type: application/json", "-d", request.body.strip()])
+    full_command.append(url)
+
+    try:
+        result = subprocess.run(full_command, capture_output=True, text=True, timeout=CURL_TIMEOUT_SECONDS)
+    except subprocess.TimeoutExpired as error:
+        output = normalize_process_output(error.stdout) + normalize_process_output(error.stderr)
+        formatted, rendered = format_command_output(full_command, output + "\ncurl timed out.", 124)
+        return {"url": url, "command": rendered, "output": formatted, "exit_code": 124}
+
+    output = get_process_output(result)
+    formatted, rendered = format_command_output(full_command, output, result.returncode)
+    return {"url": url, "command": rendered, "output": formatted, "exit_code": result.returncode}
+
+
 @app.post("/password-resilience")
 def check_password_resilience(request: PasswordAuditRequest):
     if not request.authorized:
@@ -673,7 +869,13 @@ def check_password_resilience(request: PasswordAuditRequest):
 def wireless_status(request: WirelessStatusRequest):
     if not request.accepted_policy:
         raise HTTPException(status_code=403, detail="Accept the privacy policy before inspecting wireless adapters.")
-    return get_wireless_status()
+
+    interface = request.interface.strip()
+    if interface and not re.fullmatch(r"[A-Za-z0-9_.:-]{1,32}", interface):
+        raise HTTPException(status_code=400, detail="Use a valid local interface name with up to 32 characters.")
+
+    extra_flags = parse_extra_flags(request.flags, "airmon")
+    return get_wireless_status(request.mode, extra_flags, request.verbose, interface)
 
 
 @app.post("/vlan-plan")
@@ -696,7 +898,13 @@ def vlan_plan(request: VlanPlanRequest):
 def vlan_inventory(request: WirelessStatusRequest):
     if not request.accepted_policy:
         raise HTTPException(status_code=403, detail="Accept the privacy policy before viewing local VLANs.")
-    return get_vlan_inventory()
+
+    result = get_vlan_inventory()
+    if request.verbose != "off":
+        tool = result.get("tool", "vlan inventory")
+        output = result.get("output", "")
+        apply_verbose_level(result, [tool], output, 0 if result.get("available") else 1, request.verbose)
+    return result
 
 
 @app.post("/tshark-inspect")

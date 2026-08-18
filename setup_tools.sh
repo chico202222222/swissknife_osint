@@ -10,7 +10,7 @@ if [[ ! -x ".venv/bin/python" ]]; then
     exit 1
 fi
 
-mkdir -p tools/nmap/bin osint
+mkdir -p tools/nmap/bin tools/tshark/bin osint
 
 if [[ ! -d "osint/sherlock/sherlock_project" ]]; then
     temp_dir="$(mktemp -d)"
@@ -52,6 +52,40 @@ if [[ ! -x "tools/nmap/bin/nmap" ]]; then
     fi
 fi
 
+if [[ ! -x "tools/tshark/bin/tshark" ]]; then
+    tshark_path="$(command -v tshark || true)"
+
+    if [[ -z "$tshark_path" && "$(uname -s)" == "Darwin" && -x "$(command -v brew || true)" ]]; then
+        brew install wireshark
+        tshark_path="$(command -v tshark || true)"
+    fi
+
+    if [[ -z "$tshark_path" && "$(uname -s)" == "Linux" && -x "$(command -v apt-get || true)" ]]; then
+        sudo apt-get update
+        sudo apt-get install -y tshark
+        tshark_path="$(command -v tshark || true)"
+    fi
+
+    if [[ -n "$tshark_path" ]]; then
+        cat > tools/tshark/bin/tshark <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+exec "$tshark_path" "\$@"
+EOF
+        chmod +x tools/tshark/bin/tshark
+    else
+        echo "TShark was not found and no supported package manager is available."
+        echo "Install Wireshark/TShark manually, then run this script again."
+        exit 1
+    fi
+fi
+
+if ! tools/tshark/bin/tshark -v >/dev/null 2>&1; then
+    echo "TShark validation failed: tools/tshark/bin/tshark -v"
+    exit 1
+fi
+
 echo "Sherlock ready: .venv/bin/sherlock"
 echo "Nmap ready: tools/nmap/bin/nmap"
+echo "TShark ready: tools/tshark/bin/tshark"
 echo "SQLMap ready: osint/sqlmap/sqlmap.py"

@@ -140,7 +140,7 @@
                         <p class="eyebrow" data-i18n="sherlockLabel">Username search</p>
                         <h2 data-i18n="sherlockTitle">Run Sherlock</h2>
                     </div>
-                    <p class="status" data-i18n="sherlockDescription">Search public username profiles.</p>
+                    <p class="status has-tip" data-help-en="Looks up a username across public sites. Verbose is on by default." data-help-pt="Busca um usuario em sites publicos. Verbose vem ligado." data-i18n="sherlockDescription">Search public username profiles.</p>
                 </div>
 
                 <form class="sherlock-form" onsubmit="runSherlock(event)">
@@ -167,7 +167,7 @@
                         <p class="eyebrow" data-i18n="blackbirdLabel">Username search</p>
                         <h2 data-i18n="blackbirdTitle">Run Blackbird</h2>
                     </div>
-                    <p class="status" data-i18n="blackbirdDescription">Search public username profiles across social platforms.</p>
+                    <p class="status has-tip" data-help-en="OSINT username search across social platforms." data-help-pt="Busca OSINT de usuario em plataformas sociais." data-i18n="blackbirdDescription">Search public username profiles across social platforms.</p>
                 </div>
 
                 <form class="sherlock-form" onsubmit="runBlackbird(event)">
@@ -194,7 +194,7 @@
                         <p class="eyebrow" data-i18n="nmapLabel">Network scan</p>
                         <h2 data-i18n="nmapTitle">Run Nmap</h2>
                     </div>
-                    <p class="status" data-i18n="nmapDescription">Scan the top 100 ports of an authorized target.</p>
+                    <p class="status has-tip" data-help-en="Port scan with Nmap. Needs your permission checkbox." data-help-pt="Scan de portas com Nmap. Exige o checkbox de permissao." data-i18n="nmapDescription">Scan the top 100 ports of an authorized target.</p>
                 </div>
 
                 <p class="scan-warning" data-i18n="nmapWarning">ONLY SCAN IF YOU HAVE PERMISSION!</p>
@@ -231,7 +231,7 @@
                             <p class="eyebrow" data-i18n="tsharkLabel">Packet inspection</p>
                             <h2 data-i18n="tsharkTitle">Run TShark</h2>
                         </div>
-                        <p class="status" data-i18n="tsharkDescription">Capture loopback HTTP traffic or TLS handshakes from local lab ports such as NGINX on 8443.</p>
+                        <p class="status has-tip" data-help-en="Captures loopback packets for a few seconds on a local port." data-help-pt="Captura pacotes loopback por alguns segundos numa porta local." data-i18n="tsharkDescription">Capture loopback HTTP traffic or TLS handshakes from local lab ports such as NGINX on 8443.</p>
                     </div>
 
                     <p class="scan-warning" data-i18n="tsharkWarning">LOOPBACK ONLY: capture stays on this machine and requires local authorization.</p>
@@ -270,19 +270,21 @@
                             <p class="eyebrow" data-i18n="sqlmapLabel">SQL injection lab</p>
                             <h2 data-i18n="sqlmapTitle">SQLMap template</h2>
                         </div>
-                        <p class="status" data-i18n="sqlmapDescription">Run SQLMap against an authorized web target with verbose output.</p>
+                        <p class="status has-tip" data-help-en="SQL injection scanner for authorized targets only." data-help-pt="Scanner de SQL injection so em alvos autorizados." data-i18n="sqlmapDescription">Run SQLMap against an authorized web target with verbose output.</p>
                     </div>
 
                     <p class="scan-warning" data-i18n="sqlmapWarning">DANGEROUS TOOL: ONLY USE ON YOUR OWN LOCAL LAB OR WITH EXPLICIT WRITTEN PERMISSION.</p>
 
                     <form class="sherlock-form" onsubmit="runSqlmap(event)">
-                        <label for="sqlmap-target" data-i18n="targetUrlLabel">Target URL</label>
+                        <label for="sqlmap-target" class="has-tip" data-help-en="URL to test. Start with the lab target below." data-help-pt="URL para testar. Comece pelo alvo de lab abaixo." data-i18n="targetUrlLabel">Target URL</label>
                         <div class="sherlock-controls">
-                            <input id="sqlmap-target" name="target" type="url" maxlength="2048" placeholder="http://127.0.0.1:8080/login" required disabled oninput="validateInput(this)">
-                            <button type="submit" data-requires-privacy disabled data-i18n="runSqlmap" data-help-pt="Executa SQLMap com verbosidade no alvo autorizado." data-help-en="Runs SQLMap with verbose output on the authorized target.">Run SQLMap</button>
+                            <input id="sqlmap-target" name="target" type="url" maxlength="2048" placeholder="http://127.0.0.1:8000/lab/user?id=1" required disabled oninput="validateInput(this)">
+                            <button type="button" class="secondary-button" onclick="useSqlmapLabTarget()" data-requires-privacy disabled data-i18n="sqlmapUseLab" data-help-en="Fills the vulnerable lab route GET /lab/user?id=1" data-help-pt="Preenche a rota vulneravel GET /lab/user?id=1">Lab target</button>
+                            <button type="submit" data-requires-privacy disabled data-i18n="runSqlmap" data-help-en="Runs SQLMap locally with -v and --batch" data-help-pt="Executa SQLMap localmente com -v e --batch">Run SQLMap</button>
                         </div>
                         <p id="sqlmap-target-validation" class="validation-message invalid" role="status" aria-live="polite" data-i18n="privacyRequired">Accept the privacy policy before typing.</p>
-                        <label for="sqlmap-flags" data-i18n="flagsLabel">Extra flags</label>
+                        <p class="flags-hint" data-i18n="sqlmapSuggestedTarget">Lab: <code>/lab/user?id=1</code> (intentionally vulnerable). Login form is secure.</p>
+                        <label for="sqlmap-flags" class="has-tip" data-help-en="Extra SQLMap flags. -v and --batch are already added." data-help-pt="Flags extras. -v e --batch ja entram." data-i18n="flagsLabel">Extra flags</label>
                         <input id="sqlmap-flags" class="flags-input" type="text" maxlength="240" placeholder='--data "username=demo&password=DemoPass123!" -vv' disabled oninput="validateInput(this)">
                         <p id="sqlmap-flags-validation" class="validation-message" role="status" aria-live="polite"></p>
                         <p class="flags-hint" data-i18n="sqlmapFlagsHint">Example: -vv --level=2 --risk=1 (-v and --batch are enabled by default)</p>
@@ -303,7 +305,7 @@
                         <p class="eyebrow" data-i18n="resilienceLabel">Local security check</p>
                         <h2 data-i18n="resilienceTitle">Password resilience</h2>
                     </div>
-                    <p class="status" data-i18n="resilienceDescription">Evaluate a test password locally without login attempts.</p>
+                    <p class="status has-tip" data-help-en="Scores password strength locally — no login attempts." data-help-pt="Pontua forca da senha localmente — sem tentar login." data-i18n="resilienceDescription">Evaluate a test password locally without login attempts.</p>
                 </div>
 
                 <form class="sherlock-form" onsubmit="runPasswordResilience(event)">
@@ -330,7 +332,7 @@
                         <p class="eyebrow" data-i18n="exifLabel">Local image metadata</p>
                         <h2 data-i18n="exifTitle">Run ExifTool</h2>
                     </div>
-                    <p class="status" data-i18n="exifDescription">Read metadata from an image using the local JavaScript server.</p>
+                    <p class="status has-tip" data-help-en="Reads EXIF/GPS from an image via the local Node server." data-help-pt="Le EXIF/GPS de uma imagem via servidor Node local." data-i18n="exifDescription">Read metadata from an image using the local JavaScript server.</p>
                 </div>
 
                 <form class="sherlock-form" onsubmit="runExifTool(event)">
@@ -339,6 +341,7 @@
                         <input id="exif-image" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/tiff,image/heic,image/heif" required disabled onchange="storeExifImage(this)">
                         <button type="submit" data-requires-privacy disabled data-i18n="runExif" data-help-pt="Le metadados e coordenadas GPS da foto local." data-help-en="Reads metadata and GPS coordinates from the local photo.">Read metadata</button>
                     </div>
+                    <p class="flags-hint" data-i18n="exifSuggestionsHint">JPEG, PNG, WebP, TIFF, HEIC — até 2 MB</p>
                     <p id="exif-image-validation" class="validation-message invalid" role="status" aria-live="polite" data-i18n="privacyRequired">Accept the privacy policy before selecting an image.</p>
                 </form>
                 </div>
@@ -352,10 +355,39 @@
                         <p class="eyebrow" data-i18n="wirelessLabel">Wireless adapter audit</p>
                         <h2 data-i18n="wirelessTitle">Airmon-ng status</h2>
                     </div>
-                    <p class="status" data-i18n="wirelessDescription">List local wireless adapters with the safe command for this operating system.</p>
+                    <p class="status has-tip" data-help-en="Read-only wireless adapter info. Does not enable monitor mode." data-help-pt="Info read-only de adaptador wireless. Nao ativa monitor mode." data-i18n="wirelessDescription">List local wireless adapters with the safe command for this operating system.</p>
                 </div>
 
-                <button type="button" class="wireless-button" onclick="runWirelessStatus()" data-requires-privacy disabled data-i18n="runWireless" data-help-pt="Lista adaptadores sem alterar a conexao." data-help-en="Lists adapters without changing the connection.">Inspect adapters</button>
+                <form class="sherlock-form" onsubmit="runWirelessStatus(event)">
+                    <label for="wireless-mode" data-i18n="wirelessModeLabel">Scan mode</label>
+                    <select id="wireless-mode" disabled>
+                        <option value="inventory" data-i18n="wirelessModeInventory">Adapter inventory</option>
+                        <option value="health_check" data-i18n="wirelessModeHealth">Health / interference check</option>
+                        <option value="drivers" data-i18n="wirelessModeDrivers">Drivers / PHY details</option>
+                        <option value="networks" data-i18n="wirelessModeNetworks">Nearby networks</option>
+                        <option value="capabilities" data-i18n="wirelessModeCapabilities">PHY / capabilities</option>
+                        <option value="link" data-i18n="wirelessModeLink">Link status</option>
+                    </select>
+
+                    <label for="wireless-interface" data-i18n="wirelessInterfaceLabel">Interface (optional)</label>
+                    <input id="wireless-interface" class="flags-input" type="text" maxlength="32" placeholder="wlan0 / en0 / Wi-Fi" disabled oninput="validateInput(this)">
+                    <p id="wireless-interface-validation" class="validation-message" role="status" aria-live="polite"></p>
+
+                    <label for="wireless-flags" data-i18n="flagsLabel">Extra flags</label>
+                    <input id="wireless-flags" class="flags-input" type="text" maxlength="240" placeholder="check" disabled oninput="validateInput(this)">
+                    <p id="wireless-flags-validation" class="validation-message" role="status" aria-live="polite"></p>
+                    <p class="flags-hint" data-i18n="wirelessFlagsHint">Safe read-only flags only. start/stop/kill are blocked.</p>
+
+                    <label for="wireless-verbose-level" class="has-tip" data-help-en="How much detail to show in the terminal." data-help-pt="Quanto detalhe mostrar no terminal." data-i18n="wirelessVerboseLabel">Output detail</label>
+                    <select id="wireless-verbose-level" disabled>
+                        <option value="off" data-i18n="wirelessVerboseOff" data-help-en="Platform metadata only" data-help-pt="Somente metadados">Summary</option>
+                        <option value="summary" data-i18n="wirelessVerboseSummary" data-help-en="Metadata plus raw tool output" data-help-pt="Metadados + saida bruta">Summary + output</option>
+                        <option value="command" selected data-i18n="wirelessVerboseCommand" data-help-en="Shows $ command line and output" data-help-pt="Mostra linha $ comando e saida">Command + output</option>
+                        <option value="debug" data-i18n="wirelessVerboseDebug" data-help-en="Command, output and exit code" data-help-pt="Comando, saida e exit code">Debug</option>
+                    </select>
+
+                    <button type="submit" class="wireless-button" data-requires-privacy disabled data-i18n="runWireless" data-help-pt="Lista adaptadores sem alterar a conexao." data-help-en="Lists adapters without changing the connection.">Inspect adapters</button>
+                </form>
                 <div id="wireless-output" class="sherlock-output" role="log" aria-live="polite" data-i18n="wirelessWaiting">Wireless adapter information will appear here.</div>
 
                 <button type="button" class="wireless-button" onclick="viewVlans()" data-requires-privacy disabled data-i18n="viewVlans" data-help-pt="Lista as VLANs configuradas nesta maquina." data-help-en="Lists VLANs configured on this machine.">Ver VLANs</button>
@@ -380,15 +412,62 @@
                 <div id="vlan-output" class="sherlock-output" role="log" aria-live="polite" data-i18n="vlanWaiting">O plano VLAN aparecera aqui. Nenhum comando sera executado.</div>
             </section>
 
-            </div>
+            <section class="tool-card sherlock-card curl-tool-card tools-grid-span">
+                <div class="tool-card-head">
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow" data-i18n="curlLabel">HTTP client</p>
+                            <h2 data-i18n="curlTitle">Run curl</h2>
+                        </div>
+                        <p class="status has-tip" data-help-en="Send HTTP requests from the backend using curl. Good for quick API checks." data-help-pt="Envia requisicoes HTTP pelo backend com curl. Util para testar APIs." data-i18n="curlDescription">Run curl against a URL and read the response in the terminal below.</p>
+                    </div>
 
-            <section class="curl-card">
-                <p class="eyebrow" data-i18n="curlTitle">Curl checks</p>
-                <pre><code>curl http://127.0.0.1:8000/ip</code></pre>
-                <pre><code>curl -X POST http://127.0.0.1:8000/browser-action -H 'Content-Type: application/json' -d '{"browser_os":"mac"}'</code></pre>
-                <pre><code>curl -X POST http://127.0.0.1:8000/browser-action -H 'Content-Type: application/json' -d '{"browser_os":"windows"}'</code></pre>
-                <pre><code>curl -X POST http://127.0.0.1:8000/browser-action -H 'Content-Type: application/json' -d '{"browser_os":"linux"}'</code></pre>
+                    <form class="sherlock-form" onsubmit="runCurl(event)">
+                        <label for="curl-url" class="has-tip" data-help-en="Full http or https URL to request." data-help-pt="URL http ou https completa." data-i18n="curlUrlLabel">URL</label>
+                        <input id="curl-url" class="flags-input" type="url" maxlength="2048" placeholder="http://127.0.0.1:8000/lab/user?id=1" required disabled oninput="validateInput(this)">
+                        <p id="curl-url-validation" class="validation-message invalid" role="status" aria-live="polite" data-i18n="privacyRequired">Accept the privacy policy before typing.</p>
+
+                        <label for="curl-method" class="has-tip" data-help-en="HTTP method curl sends with -X." data-help-pt="Metodo HTTP enviado com -X." data-i18n="curlMethodLabel">Method</label>
+                        <select id="curl-method" disabled>
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                            <option value="HEAD">HEAD</option>
+                        </select>
+
+                        <label for="curl-verbose" class="has-tip" data-help-en="How much curl prints: silent hides progress, trace shows TLS details." data-help-pt="Quanto o curl mostra: silent esconde progresso, trace mostra TLS." data-i18n="curlVerboseLabel">Verbosity</label>
+                        <select id="curl-verbose" disabled>
+                            <option value="silent" data-help-en="-sS: errors only, no progress bar" data-help-pt="-sS: so erros, sem barra de progresso">Silent (-sS)</option>
+                            <option value="normal" selected data-help-en="Default output: status + body" data-help-pt="Saida padrao: status + corpo">Normal</option>
+                            <option value="verbose" data-help-en="-v: request/response headers" data-help-pt="-v: cabecalhos request/response">Verbose (-v)</option>
+                            <option value="trace" data-help-en="-vv: full handshake and headers" data-help-pt="-vv: handshake e cabecalhos completos">Trace (-vv)</option>
+                        </select>
+
+                        <label for="curl-body" class="has-tip" data-help-en="JSON body for POST requests (-d)." data-help-pt="Corpo JSON para POST (-d)." data-i18n="curlBodyLabel">POST body (optional)</label>
+                        <input id="curl-body" class="flags-input" type="text" maxlength="512" placeholder='{"browser_os":"mac"}' disabled>
+
+                        <label for="curl-flags" class="has-tip" data-help-en="Extra flags, e.g. -i -L -H 'Accept: application/json'" data-help-pt="Flags extras, ex. -i -L -H 'Accept: application/json'" data-i18n="flagsLabel">Extra flags</label>
+                        <input id="curl-flags" class="flags-input" type="text" maxlength="240" placeholder="-i -L" disabled oninput="validateInput(this)">
+                        <p id="curl-flags-validation" class="validation-message" role="status" aria-live="polite"></p>
+
+                        <div class="curl-presets">
+                            <button type="button" class="secondary-button preset-button" data-requires-privacy disabled onclick="fillCurlPreset('ip')" data-i18n="curlPresetIp">GET /ip</button>
+                            <button type="button" class="secondary-button preset-button" data-requires-privacy disabled onclick="fillCurlPreset('lab')" data-i18n="curlPresetLab">Lab user</button>
+                            <button type="button" class="secondary-button preset-button" data-requires-privacy disabled onclick="fillCurlPreset('browser')" data-i18n="curlPresetBrowser">POST browser</button>
+                        </div>
+
+                        <label class="permission-check">
+                            <input id="curl-permission" type="checkbox">
+                            <span data-i18n="curlPermissionLabel">I am authorized to request this URL.</span>
+                        </label>
+
+                        <button type="submit" class="wireless-button" data-requires-privacy disabled data-i18n="runCurl" data-help-en="Executes curl on the backend and streams output here" data-help-pt="Executa curl no backend e mostra a saida aqui">Run curl</button>
+                    </form>
+                </div>
+
+                <div id="curl-output" class="sherlock-output" role="log" aria-live="polite" data-i18n="curlWaiting">curl output will appear here.</div>
             </section>
+
+            </div>
 
         </main>
         <script type="module" src="/script.js"></script>

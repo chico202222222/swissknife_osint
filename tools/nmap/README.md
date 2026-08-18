@@ -1,5 +1,7 @@
-# Local Nmap
+# Nmap local
 
-Run `../setup_tools.sh` from the project root to place the machine's Nmap executable in `tools/nmap/bin/nmap`.
+```bash
+./setup_tools.sh
+```
 
-The executable is machine-specific, so run the setup script again when preparing the project on another operating system or architecture.
+Copia o Nmap da máquina para `tools/nmap/bin/nmap`. Rode de novo ao mudar de OS ou arquitetura.

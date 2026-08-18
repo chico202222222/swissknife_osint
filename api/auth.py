@@ -3,9 +3,10 @@ import re
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel, Field
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from .database import PROJECT_ROOT, SessionLocal, get_db
+from .database import DATABASE_URL, PROJECT_ROOT, SessionLocal, get_db
 from .models import User
 from .security import hash_password, verify_password
 
@@ -55,28 +56,56 @@ def public_path(request: Request, path: str) -> str:
     return f"{prefix}{path}" if prefix else path
 
 
+def session_username(request: Request) -> str | None:
+    return request.session.get("username")
+
+
+def require_session(request: Request) -> tuple[int, str]:
+    user_id = request.session.get("user_id")
+    username = request.session.get("username")
+    if not user_id or not username:
+        raise HTTPException(status_code=401, detail="Not authenticated.")
+    return user_id, username
+
+
 @router.get("/login", response_class=HTMLResponse)
-def login_page(request: Request, error: str | None = None, ok: str | None = None):
+def login_page(request: Request, error: str | None = None):
+    if session_username(request):
+        return RedirectResponse(url=public_path(request, "/dashboard"), status_code=303)
+
     html_path = PROJECT_ROOT / "src" / "login.html"
     if not html_path.is_file():
         raise HTTPException(status_code=500, detail="Login template not found.")
 
     content = html_path.read_text(encoding="utf-8")
-    logout_url = public_path(request, "/auth/logout")
-    logged_in = request.session.get("username")
-    if logged_in:
-        banner = (
-            f'<p class="banner success">Logado como <strong>{logged_in}</strong>. '
-            f'<a href="{logout_url}">Sair</a></p>'
-        )
-    elif error == "invalid":
+    if error == "invalid":
         banner = '<p class="banner error">Usuario ou senha invalidos.</p>'
-    elif ok:
-        banner = '<p class="banner success">Login realizado com sucesso.</p>'
     else:
         banner = ""
 
     content = content.replace("<!--BANNER-->", banner)
+    return HTMLResponse(content)
+
+
+@router.get("/dashboard", response_class=HTMLResponse)
+def dashboard_page(request: Request, db: Session = Depends(get_db)):
+    if not session_username(request):
+        return RedirectResponse(url=public_path(request, "/login"), status_code=303)
+
+    user_id, username = require_session(request)
+    user_count = db.query(User).count()
+    db_label = "SQLite (data/app.db)" if DATABASE_URL.startswith("sqlite") else DATABASE_URL.split("@")[-1]
+
+    html_path = PROJECT_ROOT / "src" / "dashboard.html"
+    if not html_path.is_file():
+        raise HTTPException(status_code=500, detail="Dashboard template not found.")
+
+    content = html_path.read_text(encoding="utf-8")
+    content = content.replace("<!--USERNAME-->", username)
+    content = content.replace("<!--USER_ID-->", str(user_id))
+    content = content.replace("<!--DB_INFO-->", f"{db_label} — {user_count} usuario(s)")
+    content = content.replace("<!--ME_URL-->", public_path(request, "/auth/me"))
+    content = content.replace("<!--LOGOUT_URL-->", public_path(request, "/auth/logout"))
     return HTMLResponse(content)
 
 
@@ -106,7 +135,7 @@ def login_form(
 
     request.session["user_id"] = user.id
     request.session["username"] = user.username
-    return RedirectResponse(url=public_path(request, "/login?ok=1"), status_code=303)
+    return RedirectResponse(url=public_path(request, "/dashboard"), status_code=303)
 
 
 @router.post("/auth/register")
@@ -151,3 +180,10 @@ def logout_json(request: Request):
 def logout_page(request: Request):
     request.session.clear()
     return RedirectResponse(url=public_path(request, "/login"), status_code=303)
+
+
+@router.get("/lab/user")
+def lab_user_lookup(id: str, db: Session = Depends(get_db)):
+    """Lab-only: raw SQL on purpose for SQLMap practice."""
+    rows = db.execute(text(f"SELECT id, username FROM users WHERE id = {id}")).mappings().all()
+    return {"rows": [dict(row) for row in rows]}

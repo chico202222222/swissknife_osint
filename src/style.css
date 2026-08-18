@@ -113,6 +113,11 @@ h2 {
     gap: 8px;
 }
 
+.has-tip {
+    position: relative;
+    cursor: help;
+}
+
 button {
     position: relative;
     border: 1px solid #20252b;
@@ -127,7 +132,9 @@ button {
 }
 
 button[data-help]::before,
-button[data-help]::after {
+button[data-help]::after,
+.has-tip[data-help]::before,
+.has-tip[data-help]::after {
     position: absolute;
     z-index: 30;
     left: 50%;
@@ -137,7 +144,8 @@ button[data-help]::after {
     transition: opacity 140ms ease, transform 140ms ease;
 }
 
-button[data-help]::before {
+button[data-help]::before,
+.has-tip[data-help]::before {
     content: attr(data-help);
     bottom: calc(100% + 10px);
     width: max-content;
@@ -155,7 +163,8 @@ button[data-help]::before {
     white-space: normal;
 }
 
-button[data-help]::after {
+button[data-help]::after,
+.has-tip[data-help]::after {
     content: "";
     bottom: calc(100% + 5px);
     border-width: 5px 5px 0;
@@ -166,7 +175,11 @@ button[data-help]::after {
 button[data-help]:hover::before,
 button[data-help]:hover::after,
 button[data-help]:focus-visible::before,
-button[data-help]:focus-visible::after {
+button[data-help]:focus-visible::after,
+.has-tip[data-help]:hover::before,
+.has-tip[data-help]:hover::after,
+.has-tip[data-help]:focus-visible::before,
+.has-tip[data-help]:focus-visible::after {
     opacity: 1;
     transform: translate(-50%, 0);
 }
@@ -500,6 +513,10 @@ code {
 
 .flags-input,
 #tshark-profile,
+#wireless-mode,
+#wireless-verbose-level,
+#curl-method,
+#curl-verbose,
 #vlan-interface,
 .form-row input {
     width: 100%;
@@ -578,6 +595,10 @@ code {
 
 .flags-input:disabled,
 #tshark-profile:disabled,
+#wireless-mode:disabled,
+#wireless-verbose-level:disabled,
+#curl-method:disabled,
+#curl-verbose:disabled,
 #vlan-interface:disabled,
 .form-row input:disabled {
     color: #687078;
@@ -587,6 +608,10 @@ code {
 
 .flags-input:focus,
 #tshark-profile:focus,
+#wireless-mode:focus,
+#wireless-verbose-level:focus,
+#curl-method:focus,
+#curl-verbose:focus,
 #vlan-interface:focus,
 .form-row input:focus {
     outline: 2px solid #20252b;
@@ -684,18 +709,73 @@ code {
 .sherlock-output {
     height: 220px;
     width: 100%;
-    margin-top: 16px;
-    padding: 14px;
+    margin-top: 0;
+    padding: 12px 14px;
     overflow: auto;
-    border: 1px solid #30383e;
-    color: #f3f1ec;
-    background: #20252b;
+    border: none;
+    color: #e8eaed;
+    background: #161a1f;
     font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-    font-size: 0.78rem;
-    line-height: 1.5;
+    font-size: 0.76rem;
+    line-height: 1.55;
     overflow-wrap: anywhere;
     white-space: pre-wrap;
+    tab-size: 2;
 }
+
+.terminal-wrap {
+    margin-top: 16px;
+    border: 1px solid #30383e;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.terminal-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 10px;
+    border-bottom: 1px solid #30383e;
+    color: #9aa3ab;
+    background: #252b31;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.terminal-bar span:last-child {
+    color: #6b737b;
+    font-size: 0.62rem;
+    text-transform: none;
+}
+
+.curl-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px 0 12px;
+}
+
+.secondary-button {
+    border-color: #d8dde2;
+    color: #20252b;
+    background: #fff;
+    font-size: 0.82rem;
+}
+
+.secondary-button:hover {
+    background: #f3f1ec;
+}
+
+.sherlock-controls .secondary-button,
+.curl-presets .secondary-button {
+    width: auto;
+    flex: 0 0 auto;
+}
+
+#curl-method,
+#curl-verbose,
 
 .ip-card,
 .panel {

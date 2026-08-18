@@ -16,7 +16,21 @@ const locale = {
         publicIp: "Public IP",
         browserLabel: "Browser signal",
         runSignal: "Run signal",
-        curlTitle: "Curl checks",
+        curlTitle: "Run curl",
+        curlLabel: "HTTP client",
+        curlDescription: "Run curl against a URL and read the response in the terminal below.",
+        curlUrlLabel: "URL",
+        curlMethodLabel: "Method",
+        curlVerboseLabel: "Verbosity",
+        curlBodyLabel: "POST body (optional)",
+        curlPermissionLabel: "I am authorized to request this URL.",
+        curlWaiting: "curl output will appear here.",
+        runCurl: "Run curl",
+        curlPresetIp: "GET /ip",
+        curlPresetLab: "Lab user",
+        curlPresetBrowser: "POST browser",
+        sqlmapUseLab: "Lab target",
+        sqlmapSuggestedTarget: "Lab: <code>/lab/user?id=1</code> (intentionally vulnerable). Login form is secure.",
         browserResult: "Backend ran",
         unknown: "Not found",
         apiErrorTitle: "API error",
@@ -99,6 +113,21 @@ const locale = {
         wirelessLabel: "Wireless adapter audit",
         wirelessTitle: "Airmon-ng status",
         wirelessDescription: "List local wireless adapters with the safe command for this operating system.",
+        wirelessModeLabel: "Scan mode",
+        wirelessModeInventory: "Adapter inventory",
+        wirelessModeHealth: "Health / interference check",
+        wirelessModeDrivers: "Drivers / PHY details",
+        wirelessModeNetworks: "Nearby networks",
+        wirelessModeCapabilities: "PHY / capabilities",
+        wirelessModeLink: "Link status",
+        wirelessInterfaceLabel: "Interface (optional)",
+        wirelessFlagsHint: "Safe read-only flags only. start/stop/kill are blocked.",
+        wirelessVerboseLabel: "Output detail",
+        wirelessVerboseOff: "Summary",
+        wirelessVerboseSummary: "Summary + output",
+        wirelessVerboseCommand: "Command + output",
+        wirelessVerboseDebug: "Debug",
+        exifSuggestionsHint: "JPEG, PNG, WebP, TIFF, HEIC — até 2 MB",
         runWireless: "Inspect adapters",
         wirelessWaiting: "Wireless adapter information will appear here.",
         viewVlans: "View VLANs",
@@ -149,7 +178,21 @@ const locale = {
         publicIp: "IP publico",
         browserLabel: "Sinal do navegador",
         runSignal: "Executar sinal",
-        curlTitle: "Testes com curl",
+        curlTitle: "Executar curl",
+        curlLabel: "Cliente HTTP",
+        curlDescription: "Rode curl numa URL e leia a resposta no terminal abaixo.",
+        curlUrlLabel: "URL",
+        curlMethodLabel: "Metodo",
+        curlVerboseLabel: "Verbosidade",
+        curlBodyLabel: "Corpo POST (opcional)",
+        curlPermissionLabel: "Tenho autorizacao para requisitar esta URL.",
+        curlWaiting: "A saida do curl aparecera aqui.",
+        runCurl: "Executar curl",
+        curlPresetIp: "GET /ip",
+        curlPresetLab: "Lab user",
+        curlPresetBrowser: "POST browser",
+        sqlmapUseLab: "Alvo lab",
+        sqlmapSuggestedTarget: "Lab: <code>/lab/user?id=1</code> (vulneravel de proposito). Login e seguro.",
         browserResult: "Backend executou",
         unknown: "Nao encontrado",
         apiErrorTitle: "Erro na API",
@@ -232,6 +275,21 @@ const locale = {
         wirelessLabel: "Auditoria de adaptador wireless",
         wirelessTitle: "Status do Airmon-ng",
         wirelessDescription: "Liste adaptadores wireless locais com o comando seguro deste sistema operacional.",
+        wirelessModeLabel: "Modo de scan",
+        wirelessModeInventory: "Inventario de adaptadores",
+        wirelessModeHealth: "Verificacao de saude / interferencia",
+        wirelessModeDrivers: "Drivers / detalhes PHY",
+        wirelessModeNetworks: "Redes proximas",
+        wirelessModeCapabilities: "PHY / capacidades",
+        wirelessModeLink: "Status do link",
+        wirelessInterfaceLabel: "Interface (opcional)",
+        wirelessFlagsHint: "Somente flags seguras e read-only. start/stop/kill sao bloqueados.",
+        wirelessVerboseLabel: "Detalhe da saida",
+        wirelessVerboseOff: "Resumo",
+        wirelessVerboseSummary: "Resumo + saida",
+        wirelessVerboseCommand: "Comando + saida",
+        wirelessVerboseDebug: "Debug",
+        exifSuggestionsHint: "JPEG, PNG, WebP, TIFF, HEIC — ate 2 MB",
         runWireless: "Inspecionar adaptadores",
         wirelessWaiting: "As informacoes dos adaptadores wireless aparecerao aqui.",
         viewVlans: "Ver VLANs",
@@ -280,6 +338,93 @@ function resolveApiUrl() {
 }
 
 const apiUrl = resolveApiUrl();
+const SQLMAP_LAB_PATH = "/lab/user?id=1";
+
+function sqlmapLabTarget() {
+    return `${apiUrl}${SQLMAP_LAB_PATH}`;
+}
+
+function writeTerminal(outputEl, payload, waitingText) {
+    if (!outputEl) return;
+    if (waitingText) {
+        outputEl.textContent = waitingText;
+        return;
+    }
+    if (typeof payload === "string") {
+        outputEl.textContent = payload;
+        return;
+    }
+    const output = payload?.output ?? "";
+    if (output.startsWith("$ ")) {
+        const exit = payload?.exit_code;
+        outputEl.textContent = exit != null ? `${output}\n\n[exit ${exit}]` : output;
+        return;
+    }
+    const parts = [];
+    if (payload?.command) parts.push(`$ ${payload.command}`);
+    if (output) parts.push(output);
+    if (payload?.exit_code != null) parts.push(`[exit ${payload.exit_code}]`);
+    outputEl.textContent = parts.join("\n\n").trim() || "(no output)";
+}
+
+function initTerminals() {
+    document.querySelectorAll(".sherlock-output").forEach((el) => {
+        if (el.closest(".terminal-wrap")) return;
+        const wrap = document.createElement("div");
+        wrap.className = "terminal-wrap";
+        const bar = document.createElement("div");
+        bar.className = "terminal-bar";
+        bar.innerHTML = `<span>terminal</span><span>${el.id || "output"}</span>`;
+        el.parentNode.insertBefore(wrap, el);
+        wrap.append(bar, el);
+    });
+}
+
+function syncTooltips() {
+    document.querySelectorAll("[data-help-en]").forEach((element) => {
+        element.dataset.help = language === "pt" ? element.dataset.helpPt : element.dataset.helpEn;
+    });
+}
+
+function syncSelectOptionTips() {
+    document.querySelectorAll("select option[data-help-en]").forEach((option) => {
+        option.title = language === "pt" ? option.dataset.helpPt : option.dataset.helpEn;
+    });
+}
+
+function useSqlmapLabTarget() {
+    const input = document.querySelector("#sqlmap-target");
+    if (!input) return;
+    input.value = sqlmapLabTarget();
+    validateInput(input);
+}
+
+function fillCurlPreset(preset) {
+    const urlInput = document.querySelector("#curl-url");
+    const methodSelect = document.querySelector("#curl-method");
+    const bodyInput = document.querySelector("#curl-body");
+    const flagsInput = document.querySelector("#curl-flags");
+    if (!urlInput || !methodSelect) return;
+
+    if (preset === "ip") {
+        urlInput.value = `${apiUrl}/ip`;
+        methodSelect.value = "GET";
+        if (bodyInput) bodyInput.value = "";
+        if (flagsInput) flagsInput.value = "";
+    } else if (preset === "lab") {
+        urlInput.value = sqlmapLabTarget();
+        methodSelect.value = "GET";
+        if (bodyInput) bodyInput.value = "";
+        if (flagsInput) flagsInput.value = "";
+    } else if (preset === "browser") {
+        urlInput.value = `${apiUrl}/browser-action`;
+        methodSelect.value = "POST";
+        if (bodyInput) bodyInput.value = '{"browser_os":"mac"}';
+        if (flagsInput) flagsInput.value = "";
+    }
+    validateInput(urlInput);
+    if (flagsInput) validateInput(flagsInput);
+}
 const nmapFlagOptions = [
     { flag: "--open", labelKey: "nmapFlagOpen" },
     { flag: "-F", labelKey: "nmapFlagFast" },
@@ -290,10 +435,36 @@ const nmapFlagOptions = [
     { flag: "-T4", labelKey: "nmapFlagTimingFast" },
     { flag: "--reason", labelKey: "nmapFlagReason" },
 ];
+const fieldSuggestions = {
+    "sherlock-username": ["octocat", "demo", "testuser"],
+    "sherlock-flags": ["--site GitHub", "--timeout 10"],
+    "blackbird-username": ["octocat", "demo", "testuser"],
+    "blackbird-flags": ["--timeout 5", "-v"],
+    "nmap-target": ["127.0.0.1", "localhost", "192.168.1.1"],
+    "sqlmap-target": [
+        "http://127.0.0.1:8000/lab/user?id=1",
+        "http://127.0.0.1:8000/auth/login/form",
+        "http://127.0.0.1:3000/api/backend/login",
+    ],
+    "sqlmap-flags": [
+        '--data "username=demo&password=DemoPass123!"',
+        "-vv --level=2 --risk=1",
+    ],
+    "tshark-port": ["3000", "8000", "8080", "8443"],
+    "tshark-flags": ["-V", "-c 20", "-q"],
+    "password-audit": ["TestPass123!", "DemoPass123!"],
+    "wireless-interface": ["wlan0", "wlp2s0", "en0", "Wi-Fi"],
+    "wireless-flags": ["check"],
+    "vlan-interface": ["wlan0", "eth0", "en0"],
+    "vlan-id": ["10", "100", "4094"],
+    "curl-url": ["http://127.0.0.1:8000/ip", "http://127.0.0.1:8000/lab/user?id=1"],
+    "curl-flags": ["-i", "-L", "-H 'Accept: application/json'"],
+};
+const optionalFieldIds = new Set(["wireless-interface", "wireless-flags", "sherlock-flags", "blackbird-flags", "sqlmap-flags", "tshark-flags", "nmap-flags", "curl-flags", "curl-body"]);
 // Lab port allowlist — re-enable when done testing other local services (e.g. local AI uvicorn):
 // const allowedTsharkPorts = [3000, 8000, 8080, 8443];
 const optionalFlagPattern = /^(?!.*[\r\n;|`$()<>])[\s\S]+$/;
-const protectedInputIds = ["sherlock-username", "sherlock-flags", "nmap-target", "sqlmap-target", "sqlmap-flags", "blackbird-username", "blackbird-flags", "password-audit", "exif-image", "vlan-interface", "vlan-id", "tshark-port", "tshark-flags"];
+const protectedInputIds = ["sherlock-username", "sherlock-flags", "nmap-target", "sqlmap-target", "sqlmap-flags", "blackbird-username", "blackbird-flags", "password-audit", "exif-image", "wireless-interface", "wireless-flags", "vlan-interface", "vlan-id", "tshark-port", "tshark-flags", "curl-url", "curl-flags"];
 const allowedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/tiff", "image/heic", "image/heif"];
 const maxImageSize = 2 * 1024 * 1024;
 const exifStorageKey = "localExifImage";
@@ -312,9 +483,13 @@ const validationSchemas = {
         .refine((file) => file.size <= maxImageSize),
     "vlan-interface": z.string().trim().regex(/^[A-Za-z0-9_.:-]{1,32}$/),
     "vlan-id": z.coerce.number().int().min(1).max(4094),
+    "wireless-interface": z.string().max(32).refine((value) => value === "" || /^[A-Za-z0-9_.:-]{1,32}$/.test(value.trim())),
+    "wireless-flags": z.string().max(240).refine((value) => value === "" || optionalFlagPattern.test(value.trim())),
     // "tshark-port": z.coerce.number().int().refine((port) => allowedTsharkPorts.includes(port)),
     "tshark-port": z.coerce.number().int().min(1).max(65535),
     "tshark-flags": z.string().max(240).refine((value) => value === "" || optionalFlagPattern.test(value.trim())),
+    "curl-url": z.string().trim().url().regex(/^https?:\/\//),
+    "curl-flags": z.string().max(240).refine((value) => value === "" || optionalFlagPattern.test(value.trim())),
 };
 let lastFocusedElement = null;
 
@@ -331,6 +506,7 @@ function hasAcceptedPrivacy() {
 
 function setValidationMessage(input, message, isValid) {
     const messageElement = document.querySelector(`#${input.id}-validation`);
+    if (!messageElement) return;
     messageElement.textContent = message;
     messageElement.classList.toggle("valid", isValid);
     messageElement.classList.toggle("invalid", !isValid);
@@ -349,7 +525,7 @@ function validateInput(input) {
             : input.value.trim();
 
     if (!value) {
-        if (input.id.endsWith("-flags")) {
+        if (input.id.endsWith("-flags") || optionalFieldIds.has(input.id)) {
             setValidationMessage(input, locale[language].flagsOptional, true);
             return true;
         }
@@ -361,6 +537,34 @@ function validateInput(input) {
     const isValid = schema ? schema.safeParse(value).success : input.checkValidity();
     setValidationMessage(input, isValid ? locale[language].fieldValid : locale[language].fieldInvalid, isValid);
     return isValid;
+}
+
+function attachFieldAutocomplete() {
+    document.querySelectorAll("main input[type=text], main input[type=url], main input[type=password], main input[type=number]").forEach((input) => {
+        const options = fieldSuggestions[input.id];
+        if (!options?.length) return;
+
+        const listId = `${input.id}-suggestions`;
+        let datalist = document.getElementById(listId);
+        if (!datalist) {
+            datalist = document.createElement("datalist");
+            datalist.id = listId;
+            input.insertAdjacentElement("afterend", datalist);
+            input.setAttribute("list", listId);
+        }
+
+        datalist.replaceChildren(...options.map((value) => {
+            const option = document.createElement("option");
+            option.value = value;
+            return option;
+        }));
+    });
+}
+
+function formatVerboseOutput(data, verbose, metaLines) {
+    if (verbose === "off") return metaLines.join("\n");
+    if (verbose === "summary") return [...metaLines, "", data.output || ""].join("\n");
+    return data.output || metaLines.join("\n");
 }
 
 function syncNmapFlagsInput() {
@@ -444,6 +648,23 @@ function updatePrivacyState() {
         tsharkProfile.disabled = !accepted;
     }
 
+    const wirelessMode = document.querySelector("#wireless-mode");
+    if (wirelessMode) {
+        wirelessMode.disabled = !accepted;
+    }
+
+    const wirelessVerbose = document.querySelector("#wireless-verbose-level");
+    if (wirelessVerbose) {
+        wirelessVerbose.disabled = !accepted;
+    }
+
+    const curlMethod = document.querySelector("#curl-method");
+    if (curlMethod) curlMethod.disabled = !accepted;
+    const curlVerbose = document.querySelector("#curl-verbose");
+    if (curlVerbose) curlVerbose.disabled = !accepted;
+    const curlBody = document.querySelector("#curl-body");
+    if (curlBody) curlBody.disabled = !accepted;
+
     document.querySelectorAll("[data-requires-privacy]").forEach((element) => {
         element.disabled = !accepted;
     });
@@ -480,13 +701,13 @@ function runSqlmap(event) {
     const output = document.querySelector("#sqlmap-output");
     if (!validateInput(targetInput) || !validateInput(flagsInput)) return;
     if (!document.querySelector("#sqlmap-permission").checked) {
-        output.textContent = locale[language].authorizationRequired;
+        writeTerminal(output, null, locale[language].authorizationRequired);
         return;
     }
 
     const target = targetInput.value.trim();
     const flags = flagsInput.value.trim();
-    output.textContent = "Running SQLMap...";
+    writeTerminal(output, null, "Running SQLMap...");
 
     apiFetch("/sqlmap", {
         method: "POST",
@@ -501,13 +722,49 @@ function runSqlmap(event) {
         .then(async (response) => {
             const data = await response.json();
             if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
-            output.textContent = data.output || "No results returned.";
+            writeTerminal(output, data);
             clearApiError();
         })
         .catch((error) => {
-            output.textContent = error.message || "SQLMap could not run.";
+            writeTerminal(output, null, error.message || "SQLMap could not run.");
             showApiError("POST /sqlmap", error);
         });
+}
+
+async function runCurl(event) {
+    event.preventDefault();
+    const urlInput = document.querySelector("#curl-url");
+    const flagsInput = document.querySelector("#curl-flags");
+    const output = document.querySelector("#curl-output");
+    if (!validateInput(urlInput) || !validateInput(flagsInput)) return;
+    if (!document.querySelector("#curl-permission").checked) {
+        writeTerminal(output, null, locale[language].authorizationRequired);
+        return;
+    }
+
+    writeTerminal(output, null, "Running curl...");
+    try {
+        const response = await apiFetch("/curl", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                url: urlInput.value.trim(),
+                method: document.querySelector("#curl-method").value,
+                body: document.querySelector("#curl-body")?.value.trim() || "",
+                flags: flagsInput.value.trim(),
+                verbose: document.querySelector("#curl-verbose").value,
+                accepted_policy: true,
+                authorized: true,
+            }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
+        writeTerminal(output, data);
+        clearApiError();
+    } catch (error) {
+        writeTerminal(output, null, error.message);
+        showApiError("POST /curl", error);
+    }
 }
 
 async function runTsharkInspect(event) {
@@ -517,14 +774,14 @@ async function runTsharkInspect(event) {
     const output = document.querySelector("#tshark-output");
     if (!validateInput(portInput) || !validateInput(flagsInput)) return;
     if (!document.querySelector("#tshark-permission").checked) {
-        output.textContent = locale[language].authorizationRequired;
+        writeTerminal(output, null, locale[language].authorizationRequired);
         return;
     }
 
     const profile = document.querySelector("#tshark-profile").value;
     const port = Number(portInput.value);
     const flags = flagsInput.value.trim();
-    output.textContent = "Running TShark...";
+    writeTerminal(output, null, "Running TShark...");
 
     try {
         const response = await apiFetch("/tshark-inspect", {
@@ -541,10 +798,10 @@ async function runTsharkInspect(event) {
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
 
-        output.textContent = data.output || "No packets returned.";
+        writeTerminal(output, data);
         clearApiError();
     } catch (error) {
-        output.textContent = error.message;
+        writeTerminal(output, null, error.message);
         showApiError("POST /tshark-inspect", error);
     }
 }
@@ -633,7 +890,7 @@ async function runSherlock(event) {
     const username = usernameInput.value.trim();
     const flags = flagsInput.value.trim();
     const output = document.querySelector("#sherlock-output");
-    output.textContent = "Running Sherlock...";
+    writeTerminal(output, null, "Running Sherlock...");
 
     try {
         const response = await apiFetch("/sherlock", {
@@ -644,10 +901,10 @@ async function runSherlock(event) {
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
 
-        output.textContent = data.output || "No results returned.";
+        writeTerminal(output, data);
         clearApiError();
     } catch (error) {
-        output.textContent = "Sherlock could not run.";
+        writeTerminal(output, null, "Sherlock could not run.");
         showApiError("POST /sherlock", error);
     }
 }
@@ -661,7 +918,7 @@ async function runBlackbird(event) {
     const username = usernameInput.value.trim();
     const flags = flagsInput.value.trim();
     const output = document.querySelector("#blackbird-output");
-    output.textContent = "Running Blackbird...";
+    writeTerminal(output, null, "Running Blackbird...");
 
     try {
         const response = await apiFetch("/blackbird", {
@@ -672,10 +929,10 @@ async function runBlackbird(event) {
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
 
-        output.textContent = data.output || "No results returned.";
+        writeTerminal(output, data);
         clearApiError();
     } catch (error) {
-        output.textContent = "Blackbird could not run.";
+        writeTerminal(output, null, "Blackbird could not run.");
         showApiError("POST /blackbird", error);
     }
 }
@@ -690,7 +947,7 @@ async function runNmap(event) {
     const flags = flagsInput.value.trim();
     const authorized = document.querySelector("#security-permission").checked;
     const output = document.querySelector("#nmap-output");
-    output.textContent = "Running Nmap...";
+    writeTerminal(output, null, "Running Nmap...");
 
     try {
         const response = await apiFetch("/nmap", {
@@ -701,10 +958,10 @@ async function runNmap(event) {
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
 
-        output.textContent = data.output || "No results returned.";
+        writeTerminal(output, data);
         clearApiError();
     } catch (error) {
-        output.textContent = "Nmap could not run.";
+        writeTerminal(output, null, "Nmap could not run.");
         showApiError("POST /nmap", error);
     }
 }
@@ -718,7 +975,7 @@ async function runSecuritySweep() {
     const flags = flagsInput.value.trim();
     const authorized = document.querySelector("#security-permission").checked;
     const output = document.querySelector("#nmap-output");
-    output.textContent = "Running security sweep...";
+    writeTerminal(output, null, "Running security sweep...");
 
     try {
         const response = await apiFetch("/security-sweep", {
@@ -729,10 +986,10 @@ async function runSecuritySweep() {
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
 
-        output.textContent = data.output || "No results returned.";
+        writeTerminal(output, data);
         clearApiError();
     } catch (error) {
-        output.textContent = "Security sweep could not run.";
+        writeTerminal(output, null, "Security sweep could not run.");
         showApiError("POST /security-sweep", error);
     }
 }
@@ -838,32 +1095,47 @@ async function runExifTool(event) {
     }
 }
 
-async function runWirelessStatus() {
+async function runWirelessStatus(event) {
+    event.preventDefault();
+    const interfaceInput = document.querySelector("#wireless-interface");
+    const flagsInput = document.querySelector("#wireless-flags");
     const output = document.querySelector("#wireless-output");
+
     if (!hasAcceptedPrivacy()) {
         output.textContent = locale[language].privacyRequired;
         return;
     }
+    if (!validateInput(interfaceInput) || !validateInput(flagsInput)) return;
 
+    const mode = document.querySelector("#wireless-mode").value;
+    const verbose = document.querySelector("#wireless-verbose-level").value;
+    const interfaceName = interfaceInput.value.trim();
+    const flags = flagsInput.value.trim();
     output.textContent = "Inspecting wireless adapters...";
+
     try {
         const response = await apiFetch("/wireless-status", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ accepted_policy: true }),
+            body: JSON.stringify({
+                accepted_policy: true,
+                mode,
+                interface: interfaceName,
+                flags,
+                verbose,
+            }),
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
 
-        output.textContent = [
+        output.textContent = formatVerboseOutput(data, verbose, [
             `platform: ${data.platform}`,
             `tool: ${data.tool}`,
+            `mode: ${data.mode}`,
             `available: ${data.available}`,
             `monitor_mode_supported: ${data.monitor_mode_supported}`,
             data.note || "",
-            "",
-            data.output || "No adapters returned.",
-        ].filter((line, index, lines) => line || lines[index - 1]).join("\n");
+        ].filter(Boolean));
         clearApiError();
     } catch (error) {
         output.textContent = error.message;
@@ -924,22 +1196,21 @@ async function viewVlans() {
     }
 
     output.textContent = "Inspecting local VLANs...";
+    const verbose = document.querySelector("#wireless-verbose-level")?.value || "command";
     try {
         const response = await apiFetch("/vlan-inventory", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ accepted_policy: true }),
+            body: JSON.stringify({ accepted_policy: true, verbose }),
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
 
-        output.textContent = [
+        output.textContent = formatVerboseOutput(data, verbose, [
             `platform: ${data.platform}`,
             `tool: ${data.tool}`,
             `available: ${data.available}`,
-            "",
-            data.output,
-        ].join("\n");
+        ]);
         clearApiError();
     } catch (error) {
         output.textContent = error.message;
@@ -959,14 +1230,16 @@ function setLanguage(newLanguage) {
         }
     });
 
-    document.querySelectorAll("button[data-help-pt]").forEach((button) => {
-        button.dataset.help = newLanguage === "pt" ? button.dataset.helpPt : button.dataset.helpEn;
+    document.querySelectorAll("[data-help-en]").forEach((element) => {
+        element.dataset.help = language === "pt" ? element.dataset.helpPt : element.dataset.helpEn;
     });
+    syncSelectOptionTips();
 
     updatePrivacyState();
     fetchIp();
     sendBrowserSignal();
     renderNmapFlagOptions();
+    attachFieldAutocomplete();
 }
 
 window.fetchData = fetchData;
@@ -986,6 +1259,9 @@ window.runTsharkInspect = runTsharkInspect;
 window.runPasswordResilience = runPasswordResilience;
 window.storeExifImage = storeExifImage;
 window.runExifTool = runExifTool;
+window.runCurl = runCurl;
+window.useSqlmapLabTarget = useSqlmapLabTarget;
+window.fillCurlPreset = fillCurlPreset;
 window.runWirelessStatus = runWirelessStatus;
 window.createVlanPlan = createVlanPlan;
 window.viewVlans = viewVlans;
@@ -997,5 +1273,9 @@ document.addEventListener("keydown", (event) => {
 });
 
 document.querySelector("#nmap-flag-chips")?.addEventListener("click", handleNmapFlagClick);
+initTerminals();
+syncTooltips();
+syncSelectOptionTips();
+attachFieldAutocomplete();
 setLanguage(language);
 fetchData();

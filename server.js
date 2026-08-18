@@ -34,7 +34,10 @@ const BACKEND_PROXY_PATHS = new Set([
     "/vlan-inventory",
     "/tshark-inspect",
     "/sqlmap",
+    "/curl",
     "/login",
+    "/dashboard",
+    "/lab/user",
     "/auth/login",
     "/auth/login/form",
     "/auth/register",
@@ -253,7 +256,8 @@ http.createServer(async (request, response) => {
     let pathname;
 
     try {
-        pathname = decodeURIComponent(new URL(request.url, "http://localhost").pathname);
+        const requestUrl = new URL(request.url, "http://localhost");
+        pathname = decodeURIComponent(requestUrl.pathname);
     } catch {
         response.writeHead(400);
         response.end("Bad request");
@@ -261,8 +265,9 @@ http.createServer(async (request, response) => {
     }
 
     if (pathname === "/api/backend" || pathname.startsWith("/api/backend/")) {
-        const backendPath = pathname.slice("/api/backend".length) || "/";
-        if (!isBackendProxyAllowed(backendPath)) {
+        const requestUrl = new URL(request.url, "http://localhost");
+        const backendPath = (pathname.slice("/api/backend".length) || "/") + requestUrl.search;
+        if (!isBackendProxyAllowed(backendPath.split("?")[0])) {
             sendJson(response, 403, { detail: "This backend route is not exposed through the frontend proxy." });
             return;
         }

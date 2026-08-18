@@ -1,63 +1,54 @@
-# Dependencias por sistema operacional
+# Dependências
 
-O projeto usa Python/FastAPI na porta 8000, Node.js na porta 3000 e NGINX como proxy HTTPS. O ExifTool e fornecido pelo pacote npm `exiftool-vendored`.
+Python na `:8000`, Node na `:3000`. ExifTool vem do npm (`exiftool-vendored`).
 
-## Repositorios locais externos
-
-Este projeto depende de duas ferramentas OSINT clonadas em `osint/` para funcionar corretamente em um ambiente local de desenvolvimento. Elas nao sao armazenadas no repositorio principal e devem ser carregadas por cada usuario com os comandos abaixo:
+## Clones locais (não versionados)
 
 ```bash
 mkdir -p osint
-
 git clone https://github.com/p1ngul1n0/blackbird.git osint/blackbird
 git clone https://github.com/sherlock-project/sherlock.git osint/sherlock
-git clone https://github.com/sqlmapproject/sqlmap.git osint/sqlmap *AVISO* nao use sem autorização.
+git clone https://github.com/sqlmapproject/sqlmap.git osint/sqlmap
 ```
 
-Se quiser manter a estrutura do projeto sem mostrar esses diretorios em `git status`, o arquivo [.gitignore](.gitignore) ja ignora `osint/blackbird/` e `osint/sherlock/`.
+SQLMap só em alvos autorizados. Binários locais: `tools/nmap/bin/`, `tools/tshark/bin/` (via `./setup_tools.sh`).
 
-## Comum a todos os sistemas
+## Python + Node (todos os OS)
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
 python -m playwright install chromium
 npm install
 ```
 
-No Windows PowerShell, ative o ambiente com `.venv\Scripts\Activate.ps1` e use `python` no lugar de `python3`.
+Windows: `.venv\Scripts\Activate.ps1` e `python` no lugar de `python3`.
 
-## macOS
+## Por sistema
 
-```bash
-xcode-select --install
-brew install python node nginx nmap aircrack-ng openssl
-```
-
-O Homebrew instala Aircrack-ng no macOS, mas nao fornece `airmon-ng`. A aplicacao usa `networksetup -listallhardwareports` como inventario somente-leitura e informa que modo monitor nao e suportado por esse fluxo.
-
-## Linux (Ubuntu/Debian)
+**macOS**
 
 ```bash
-sudo apt update
-sudo apt install -y python3 python3-venv python3-pip nodejs npm nginx nmap aircrack-ng openssl git
+brew install python node nginx nmap wireshark aircrack-ng openssl
 ```
 
-No Linux, a aplicacao executa `airmon-ng` sem argumentos para listar adaptadores. Ela nao chama `airmon-ng start`, nao altera interfaces e nao captura pacotes.
+Sem `airmon-ng` funcional no Wi-Fi nativo — o app usa `networksetup` (read-only).
 
-## Windows
+**Ubuntu/Debian**
 
-Instale Python, Node.js, Git e Nmap pelos instaladores oficiais ou pelo `winget`. Para NGINX, use o pacote oficial para Windows ou WSL2; para producao, prefira NGINX em Linux/WSL.
+```bash
+sudo apt install python3 python3-venv python3-pip nodejs npm nginx nmap tshark aircrack-ng openssl git
+```
+
+`airmon-ng` só lista adaptadores. Sem `start`, sem captura.
+
+**Windows**
 
 ```powershell
-winget install Python.Python.3.13
-winget install OpenJS.NodeJS.LTS
-winget install Git.Git
-winget install Insecure.Nmap
+winget install Python.Python.3.13 OpenJS.NodeJS.LTS Git.Git Insecure.Nmap
 ```
 
-`airmon-ng` nao e nativo do Windows. A aplicacao usa `netsh wlan show interfaces` como inventario somente-leitura. Adaptadores USB com modo monitor devem ser usados em uma VM/WSL com suporte real de driver e autorizacao apropriada.
+Inventário Wi-Fi via `netsh wlan show interfaces`.
 
 ## HTTPS local
 
@@ -68,4 +59,4 @@ nginx -t -c "$PWD/deploy/runtime/nginx-https.conf"
 nginx -c "$PWD/deploy/runtime/nginx-https.conf"
 ```
 
-Abra `https://localhost:8443`. O certificado e autoassinado e deve ser aceito apenas para desenvolvimento LOCAL. Em producao, defina `SERVER_NAME`, `HTTPS_ORIGIN`, `SSL_CERTIFICATE` e `SSL_CERTIFICATE_KEY` com valores reais antes de renderizar.
+Abra `https://localhost:8443`. Em produção, configure `SERVER_NAME`, certificados reais, etc., antes do `render`.

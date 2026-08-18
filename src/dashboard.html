@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — suica-opsec-kit</title>
+    <style>
+        :root {
+            --bg: #f3f1ec;
+            --panel: #fff;
+            --border: #d8dde2;
+            --text: #20252b;
+            --muted: #687078;
+            --accent: #20252b;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            font-family: "IBM Plex Sans", system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .card {
+            width: min(480px, calc(100vw - 2rem));
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            padding: 1.75rem;
+        }
+
+        h1 { margin: 0 0 0.35rem; font-size: 1.35rem; }
+
+        p.lead {
+            margin: 0 0 1.25rem;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        dl {
+            margin: 0 0 1.25rem;
+            padding: 0.9rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            background: #fafafa;
+        }
+
+        dt {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        dd {
+            margin: 0.15rem 0 0.75rem;
+            font-family: "IBM Plex Mono", monospace;
+            font-size: 0.9rem;
+        }
+
+        dd:last-child { margin-bottom: 0; }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        a.button {
+            display: inline-block;
+            padding: 0.55rem 0.9rem;
+            border: 1px solid var(--accent);
+            border-radius: 3px;
+            background: var(--accent);
+            color: #fff;
+            font-weight: 700;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        a.button.secondary {
+            background: #fff;
+            color: var(--text);
+        }
+
+        .hint {
+            margin-top: 1rem;
+            font-size: 0.82rem;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+
+        code {
+            font-family: "IBM Plex Mono", monospace;
+            font-size: 0.85em;
+        }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <h1>Logado</h1>
+        <p class="lead">Sessao ativa — rota <code>GET /dashboard</code> mapeada no FastAPI.</p>
+
+        <dl>
+            <dt>Usuario</dt>
+            <dd><!--USERNAME--></dd>
+            <dt>ID (sessao)</dt>
+            <dd><!--USER_ID--></dd>
+            <dt>Banco</dt>
+            <dd><!--DB_INFO--></dd>
+        </dl>
+
+        <div class="actions">
+            <a class="button secondary" href="<!--ME_URL-->">GET /auth/me</a>
+            <a class="button" href="<!--LOGOUT_URL-->">Sair</a>
+        </div>
+
+        <p class="hint">
+            Lab SQLMap (propositalmente vulneravel): <code>GET /lab/user?id=1</code>
+        </p>
+    </main>
+</body>
+</html>
